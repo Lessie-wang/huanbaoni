@@ -1,0 +1,54 @@
+/* tokens.css — 全站设计变量（见 docs/接口契约.md §5）。所有页面只用这些变量，不要写死颜色。 */
+:root{
+  /* 品牌（搬自知愈） */
+  --bg:#FAF9F7;
+  --surface:#FFFFFF;
+  --accent:#D4B8A5;
+  --accent-deep:#B89A83;
+  --ink:#3A352F;
+  --sub:#8C8780;
+  --line:#ECE8E3;
+
+  /* 压力三色（莫兰迪） */
+  --calm:#A8C0B0;   /* 低压 */
+  --mid:#E8D4A8;    /* 中压 */
+  --high:#D8A08C;   /* 高压 */
+
+  /* 结构 */
+  --radius:20px;
+  --radius-sm:12px;
+  --gap:16px;
+  --shadow:0 8px 24px rgba(0,0,0,.06);
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.6;
+}
+button{
+  font-family:inherit;
+  cursor:pointer;
+  border:none;
+  border-radius:var(--radius-sm);
+  background:var(--accent);
+  color:#fff;
+  padding:12px 20px;
+  font-size:15px;
+  transition:transform .1s ease,opacity .2s ease;
+}
+button:active{transform:scale(.97);}
+button.ghost{background:transparent;color:var(--accent-deep);border:1px solid var(--accent);}
+.card{
+  background:var(--surface);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+}
+.muted{color:var(--sub);}
+.center{display:flex;align-items:center;justify-content:center;}

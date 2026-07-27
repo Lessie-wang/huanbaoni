@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>知愈·Ring 环抱你</title>
+  <link rel="stylesheet" href="lib/tokens.css" />
+  <style>
+    #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 16px 16px 84px; }
+    .topbar { display:flex; align-items:center; gap:10px; padding: 6px 2px 14px; }
+    .topbar .logo { width:28px; height:28px; border-radius:8px; background:var(--accent); }
+    .topbar h1 { font-size:17px; margin:0; font-weight:600; }
+    .topbar .gear { margin-left:auto; background:transparent; color:var(--sub); padding:6px; }
+    .tabbar {
+      position:fixed; left:0; right:0; bottom:0; height:64px;
+      max-width:480px; margin:0 auto; background:var(--surface);
+      border-top:1px solid var(--line); display:flex;
+    }
+    .tabbar button {
+      flex:1; background:transparent; color:var(--sub); border-radius:0;
+      font-size:12px; display:flex; flex-direction:column; gap:3px; padding:8px 0;
+    }
+    .tabbar button .ic { font-size:18px; line-height:1; }
+    .tabbar button.active { color:var(--accent-deep); font-weight:600; }
+    .placeholder { text-align:center; color:var(--sub); padding:60px 20px; }
+    .placeholder .em { font-size:40px; }
+    dialog.settings { border:none; border-radius:var(--radius); padding:22px; width:300px; box-shadow:var(--shadow); }
+    dialog.settings input { width:100%; padding:10px; margin:6px 0 14px; border:1px solid var(--line); border-radius:10px; font-size:14px; }
+    dialog.settings label { font-size:13px; color:var(--sub); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="topbar">
+      <div class="logo"></div>
+      <h1>环抱你</h1>
+      <button class="gear" onclick="openSettings()">⚙︎</button>
+    </div>
+    <main id="view"></main>
+  </div>
+
+  <nav class="tabbar" id="tabbar"></nav>
+
+  <dialog class="settings" id="settingsDlg">
+    <label>官方 API Base URL</label>
+    <input id="setBase" placeholder="https://.../v1" />
+    <label>API Key</label>
+    <input id="setKey" placeholder="sk-..." />
+    <label><input type="checkbox" id="setMock" style="width:auto;margin-right:6px" />使用 mock 假数据（无戒指时开发/演示）</label>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="ghost" style="flex:1" onclick="settingsDlg.close()">取消</button>
+      <button style="flex:1" onclick="saveSettings()">保存</button>
+    </div>
+  </dialog>
+
+  <!-- 共享契约层 -->
+  <script src="lib/store.js"></script>
+  <script src="lib/ai.js"></script>
+  <script src="lib/mock.js"></script>
+  <!-- <script src="lib/ble.js"></script>  硬件通了再启用真戒指 -->
+
+  <!-- 页面模块：每个由一个 agent 独立实现，注册到 window.Pages[name] = { render(el) } -->
+  <script>window.Pages = window.Pages || {};</script>
+  <script src="pages/realtime.js"></script>
+  <script src="pages/portrait.js"></script>
+  <script src="pages/growth.js"></script>
+  <script src="pages/chat.js"></script>
+  <script src="pages/tests.js"></script>
+  <script src="pages/training.js"></script>
+
+  <script>
+    // 全局戒指实例（默认 mock；硬件通了在设置里关掉 mock 并启用 BleRing）
+    const USE_MOCK = (Store.getSettings().useMock !== false);
+    window.ring = USE_MOCK ? new MockRing() : (window.BleRing ? new BleRing() : new MockRing());
+
+    // AI 从设置读取配置
+    AI.loadFromStore();
+
+    // ---- 简易 hash 路由 ----
+    const TABS = [
+      { key:'realtime', label:'环抱', ic:'♡' },
+      { key:'portrait', label:'心灵画像', ic:'❋' },
+      { key:'growth',   label:'心迹', ic:'✿' },
+      { key:'chat',     label:'小知', ic:'☁' },
+      { key:'tests',    label:'探索', ic:'✧' },
+      { key:'training', label:'修习', ic:'✎' },
+    ];
+    const tabbar = document.getElementById('tabbar');
+    const view = document.getElementById('view');
+
+    function renderTabs(active) {
+      tabbar.innerHTML = '';
+      TABS.forEach(t => {
+        const b = document.createElement('button');
+        b.className = (t.key === active ? 'active' : '');
+        b.innerHTML = `<span class="ic">${t.ic}</span>${t.label}`;
+        b.onclick = () => { location.hash = t.key; };
+        tabbar.appendChild(b);
+      });
+    }
+
+    function route() {
+      const key = (location.hash.replace('#','') || 'realtime');
+      renderTabs(key);
+      view.innerHTML = '';
+      const page = window.Pages[key];
+      if (page && typeof page.render === 'function') {
+        try { page.render(view); }
+        catch (e) { view.innerHTML = `<div class="placeholder"><div class="em">⚠️</div>${key} 渲染出错：${e.message}</div>`; }
+      } else {
+        const label = (TABS.find(t=>t.key===key)||{}).label || key;
+        view.innerHTML = `<div class="placeholder"><div class="em">🌱</div>「${label}」模块待开发<br><small class="muted">由对应 agent 实现 pages/${key}.js</small></div>`;
+      }
+    }
+    window.addEventListener('hashchange', route);
+    window.addEventListener('DOMContentLoaded', route);
+    route();
+
+    // ---- 设置弹窗 ----
+    const settingsDlg = document.getElementById('settingsDlg');
+    function openSettings() {
+      const s = Store.getSettings();
+      setBase.value = s.apiBaseUrl || '';
+      setKey.value = s.apiKey || '';
+      setMock.checked = (s.useMock !== false);
+      settingsDlg.showModal();
+    }
+    function saveSettings() {
+      Store.setSettings({ apiBaseUrl: setBase.value.trim(), apiKey: setKey.value.trim(), useMock: setMock.checked });
+      AI.loadFromStore();
+      settingsDlg.close();
+      alert('已保存。刷新页面生效（切换 mock/真戒指需刷新）。');
+    }
+  </script>
+</body>
+</html>
