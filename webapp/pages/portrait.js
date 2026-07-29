@@ -122,11 +122,11 @@
     if (rb) rb.onclick = () => { removeToday(rec.date); showEmpty(); };
   }
 
-  // 把解读拆成诗句：优先按换行；没有换行则按中文句读切分
+  // 把解读拆成诗句：优先按换行；没有换行则按中文标点切成短句
   function poemLines(text) {
     let lines;
     if (/\n/.test(text)) lines = text.split(/\n+/);
-    else lines = text.split(/[。！？；]+/);
+    else lines = text.split(/[，。！？；、]+/);
     lines = lines.map(s => s.trim().replace(/[，。！？；、]+$/, '')).filter(Boolean);
     if (!lines.length) lines = [text];
     return lines.map(l => `<div class="pt-line">${escapeHtml(l)}</div>`).join('');
