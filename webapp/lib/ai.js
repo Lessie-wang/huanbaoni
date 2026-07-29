@@ -50,6 +50,13 @@
       return AI;
     },
 
+    /** 规范化 base_url：去尾斜杠，缺 /v1 时自动补上（容错用户少填） */
+    _base() {
+      let b = (cfg.baseUrl || '').replace(/\/+$/, '');
+      if (b && !/\/v\d+$/.test(b)) b += '/v1';
+      return b;
+    },
+
     /** 文本对话。messages: [{role:'system'|'user'|'assistant', content}] */
     async chat(messages, opts = {}) {
       if (!cfg.baseUrl || !cfg.apiKey) throw new Error('AI 未配置 baseUrl/apiKey（在设置里填官方 Key）');
@@ -61,7 +68,7 @@
       // 注意：gpt-5.6-sol 仅支持默认 temperature(1)，非默认值会 400。
       // 因此只有页面显式传入时才带上该参数。
       if (opts.temperature !== undefined) body.temperature = opts.temperature;
-      const res = await fetch(cfg.baseUrl.replace(/\/$/, '') + '/chat/completions', {
+      const res = await fetch(AI._base() + '/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
         body: JSON.stringify(body),
@@ -82,7 +89,7 @@
     /** 生成心灵画像，返回图片 dataURL（或 url，取决于服务返回） */
     async image(prompt, opts = {}) {
       if (!cfg.baseUrl || !cfg.apiKey) throw new Error('AI 未配置 baseUrl/apiKey');
-      const res = await fetch(cfg.baseUrl.replace(/\/$/, '') + '/images/generations', {
+      const res = await fetch(AI._base() + '/images/generations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
         body: JSON.stringify({
