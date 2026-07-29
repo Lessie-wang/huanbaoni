@@ -81,13 +81,13 @@
       const imgUrl = await AI.image(prompt, { size: '1024x1024' });
       if (!imgUrl) throw new Error('未返回图片');
 
-      // 解读文字（小知口吻，诗意 2-3 句）
+      // 解读文字（小知口吻，分行短诗）
       let interpretation = '';
       try {
         interpretation = await AI.chat([
-          { role: 'system', content: '你是"小知"，一个温柔克制、诗意的陪伴者。用户今天的情绪概述会给你，请用 2-3 句温柔的话解读这幅由TA情绪生成的抽象画，像在轻声念一首小诗。不要报数据，不要说"这幅画"太多次，重在情感共鸣。' },
-          { role: 'user', content: `今天的情绪：${mood.moodSummary}。请为这幅画写一段温柔的解读。` },
-        ], { maxTokens: 200 });
+          { role: 'system', content: '你是"小知"，一个温柔、克制、诗意的陪伴者。请把用户今天的情绪，写成一首温柔的短诗来解读这幅由TA情绪生成的抽象画。要求：4-6 行；每行一句、简短克制（每行尽量不超过 14 字）；行与行之间用换行符分隔；不要标题、不要引号、不要解释说明、不要报数据；只输出诗句本身，重在情感共鸣与被接住的温柔感。' },
+          { role: 'user', content: `今天的情绪：${mood.moodSummary}。请为这幅画写一首温柔的小诗。` },
+        ], { maxTokens: 220 });
       } catch (e) { interpretation = mood.moodSummary; }
 
       const rec = Store.addPortrait({
@@ -112,11 +112,28 @@
       <div class="pt-palette">
         ${(rec.palette || []).map(c => `<span class="pt-sw" style="background:${c}"></span>`).join('')}
       </div>
-      <div class="pt-interp card">${rec.interpretation || rec.moodSummary || ''}</div>
+      <div class="pt-interp card">
+        <div class="pt-quote">“</div>
+        <div class="pt-poem">${poemLines(rec.interpretation || rec.moodSummary || '')}</div>
+      </div>
       <button class="ghost" id="ptRegen" style="width:100%;margin-top:14px">重新生成</button>
     `;
     const rb = document.getElementById('ptRegen');
     if (rb) rb.onclick = () => { removeToday(rec.date); showEmpty(); };
+  }
+
+  // 把解读拆成诗句：优先按换行；没有换行则按中文句读切分
+  function poemLines(text) {
+    let lines;
+    if (/\n/.test(text)) lines = text.split(/\n+/);
+    else lines = text.split(/[。！？；]+/);
+    lines = lines.map(s => s.trim().replace(/[，。！？；、]+$/, '')).filter(Boolean);
+    if (!lines.length) lines = [text];
+    return lines.map(l => `<div class="pt-line">${escapeHtml(l)}</div>`).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   }
 
   // 重新生成：移除当天旧记录（简单实现：过滤掉今天的）
@@ -153,7 +170,12 @@
       @keyframes ptSpin{to{transform:rotate(360deg)}}
       .pt-palette{display:flex;gap:8px;justify-content:center;}
       .pt-sw{width:28px;height:28px;border-radius:50%;box-shadow:var(--shadow);}
-      .pt-interp{font-size:15px;line-height:1.8;color:var(--ink);text-align:center;}
+      .pt-interp{position:relative;text-align:center;padding:30px 24px 26px;}
+      .pt-quote{position:absolute;top:6px;left:18px;font-size:44px;line-height:1;color:var(--accent);opacity:.35;
+        font-family:Georgia,"Songti SC",serif;}
+      .pt-poem{display:flex;flex-direction:column;gap:12px;
+        font-family:"STKaiti","Kaiti SC","KaiTi","楷体","Songti SC",serif;}
+      .pt-line{font-size:17px;line-height:1.9;letter-spacing:2px;color:var(--ink);}
     `;
     document.head.appendChild(s);
   }
