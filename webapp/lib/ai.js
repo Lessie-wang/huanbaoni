@@ -53,15 +53,18 @@
     /** 文本对话。messages: [{role:'system'|'user'|'assistant', content}] */
     async chat(messages, opts = {}) {
       if (!cfg.baseUrl || !cfg.apiKey) throw new Error('AI 未配置 baseUrl/apiKey（在设置里填官方 Key）');
+      const body = {
+        model: opts.model || cfg.chatModel,
+        messages,
+        max_tokens: opts.maxTokens ?? 800,
+      };
+      // 注意：gpt-5.6-sol 仅支持默认 temperature(1)，非默认值会 400。
+      // 因此只有页面显式传入时才带上该参数。
+      if (opts.temperature !== undefined) body.temperature = opts.temperature;
       const res = await fetch(cfg.baseUrl.replace(/\/$/, '') + '/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
-        body: JSON.stringify({
-          model: opts.model || cfg.chatModel,
-          messages,
-          temperature: opts.temperature ?? 0.6,
-          max_tokens: opts.maxTokens ?? 800,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error('chat HTTP ' + res.status);
       const data = await res.json();
