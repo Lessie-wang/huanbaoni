@@ -32,10 +32,14 @@
   }
 
   // ---- 心灵画像 prompt（莫兰迪抽象风，搬自"新增情绪AI图片提示词.md"的风格） ----
-  function portraitPrompt({ moodSummary, palette }) {
+  function portraitPrompt({ moodSummary, palette, emotions }) {
     const colors = (palette && palette.length) ? palette.join(', ') : 'soft warm neutral Morandi tones';
+    const emo = (emotions && emotions.length)
+      ? `Emotional undertones to weave in: ${emotions.join(', ')}. `
+      : '';
     return `A minimalist abstract emotional portrait representing a person's inner state today: "${moodSummary}". ` +
-      `Morandi color palette (${colors}), gentle flowing curves and soft geometric shapes, dreamy atmosphere, ` +
+      emo +
+      `Morandi color palette using exactly these colors (${colors}), gentle flowing curves and soft geometric shapes, dreamy atmosphere, ` +
       `subtle gradients and soft light. Calm, poetic, healing feeling. No human faces, no text. Oil-painting texture. 1024x1024.`;
   }
 
