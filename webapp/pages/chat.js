@@ -11,6 +11,24 @@
 (function (global) {
   'use strict';
 
+  // ---------- 敲击手势 → 语音录音 toggle（全局只挂一次监听，避免每次进页面重复叠加）----------
+  // ble/mock 都会派发 window 'ring:gesture' 事件；这里 800ms 去抖，指向当前活动录音器。
+  let activeVoiceToggle = null;
+  let _gestureWired = false;
+  let _lastGestureAt = 0;
+  function wireGestureOnce() {
+    if (_gestureWired) return;
+    _gestureWired = true;
+    global.addEventListener('ring:gesture', (e) => {
+      const s = ((e.detail && e.detail.gesture) || '').toUpperCase();
+      if (s.indexOf('TAP') < 0) return;
+      const now = Date.now();
+      if (now - _lastGestureAt < 800) return;
+      _lastGestureAt = now;
+      if (activeVoiceToggle) activeVoiceToggle();
+    });
+  }
+
   // ---------- 本地 mock 回复（无 API Key 时兜底，保证演示可跑） ----------
   function mockOpening(events) {
     const high = (events || []).find(e => e.level === 'high') || (events || [])[0];
@@ -78,6 +96,16 @@
         .chat-in textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;
           padding:10px 12px;font-size:15px;font-family:var(--font);max-height:96px;background:var(--surface);color:var(--ink);}
         .chat-in button{flex:none;padding:10px 16px;}
+        .chat-mic{width:44px;height:44px;padding:0!important;border-radius:50%;font-size:18px;
+          background:var(--surface);color:var(--accent);border:1px solid var(--line);}
+        .chat-mic.rec{background:var(--high);color:#fff;border-color:var(--high);animation:micPulse 1s infinite;}
+        @keyframes micPulse{0%{box-shadow:0 0 0 0 rgba(216,160,140,.6)}70%{box-shadow:0 0 0 10px rgba(216,160,140,0)}100%{box-shadow:0 0 0 0 rgba(216,160,140,0)}}
+        .rec-bar{display:none;align-items:center;gap:10px;background:var(--high);color:#fff;
+          border-radius:14px;padding:9px 14px;font-size:14px;margin:4px 0;}
+        .rec-bar.on{display:flex;}
+        .rec-bar .rec-dot{width:9px;height:9px;border-radius:50%;background:#fff;animation:micPulse 1s infinite;flex:none;}
+        .rec-bar .rec-hint{margin-left:auto;font-size:12px;opacity:.85;}
+        .msg .rec-play{margin-top:8px;width:100%;}
         .chat-tip{font-size:11px;color:var(--sub);text-align:center;padding:2px 0 6px;}
       </style>
       <div class="chat-wrap">
@@ -89,11 +117,17 @@
           </div>
         </div>
         <div class="chat-log" id="chatLog"></div>
+        <div class="rec-bar" id="recBar">
+          <span class="rec-dot"></span>
+          <span id="recText">正在聆听你说…</span>
+          <span class="rec-hint">再敲两下戒指 / 点麦克风 结束</span>
+        </div>
         <div class="chat-in">
+          <button class="chat-mic" id="chatMic" title="敲两下戒指或点这里开始说话">🎙</button>
           <textarea id="chatInput" rows="1" placeholder="想说点什么…不想说也没关系"></textarea>
           <button id="chatSend">发送</button>
         </div>
-        <div class="chat-tip">小知会保护你的隐私，不评判你 · 危机可拨心理援助 400-161-9995</div>
+        <div class="chat-tip">敲两下戒指即可开口对小知说话 · 录音只存在你本机，不上传 · 危机可拨 400-161-9995</div>
       </div>
     `;
 
@@ -104,10 +138,17 @@
     // 对话历史（送给 LLM 的 messages，system 由 witnessPrompt 生成）
     const history = [];
 
-    function bubble(role, text) {
+    function bubble(role, text, opts) {
       const d = document.createElement('div');
       d.className = 'msg ' + (role === 'me' ? 'me' : 'zhi');
       d.textContent = text;
+      if (opts && opts.audioId) {
+        const audio = document.createElement('audio');
+        audio.className = 'rec-play';
+        audio.controls = true;
+        AudioStore.url(opts.audioId).then((u) => { if (u) audio.src = u; });
+        d.appendChild(audio);
+      }
       log.appendChild(d);
       log.scrollTop = log.scrollHeight;
       return d;
@@ -145,39 +186,161 @@
       history.push({ role: 'assistant', content: text });
     }
 
-    // ---- 用户发送 ----
-    async function send() {
-      const t = input.value.trim();
-      if (!t) return;
-      input.value = '';
-      input.style.height = 'auto';
-      bubble('me', t);
-      history.push({ role: 'user', content: t });
+    // ---- 用户发送（文字或语音转写共用）----
+    async function respond(userText, opts) {
+      bubble('me', userText, opts);
+      history.push({ role: 'user', content: userText });
 
       const tip = typing();
       let text;
       if (online) {
         try {
-          // 复用 witnessPrompt 作为 system，附上对话历史
           const msgs = history.some(m => m.role === 'system')
             ? history
             : [{ role: 'system', content: AI.witnessPrompt(events) }, ...history];
           text = await AI.chat(msgs);
         } catch (e) {
-          text = mockReply(t) + `\n（AI 调用失败，已用本地兜底：${e.message}）`;
+          text = mockReply(userText) + `\n（AI 调用失败，已用本地兜底：${e.message}）`;
         }
       } else {
-        text = mockReply(t);
+        text = mockReply(userText);
       }
       tip.remove();
       bubble('zhi', text);
       history.push({ role: 'assistant', content: text });
     }
 
+    function send() {
+      const t = input.value.trim();
+      if (!t) return;
+      input.value = '';
+      input.style.height = 'auto';
+      respond(t);
+    }
+
     sendBtn.onclick = send;
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
+
+    // ================= 语音输入：敲两下戒指开始 / 再敲两下结束 =================
+    // 原始音频用 MediaRecorder 录（停顿随意，存 IndexedDB）；
+    // 文字稿用 Web Speech 连续识别，静音断了就自动重启，把停顿缝过去；
+    // 结束条件：双击 toggle 或点麦克风；只有 5 分钟硬上限做保险，不做静音自动停。
+    const micBtn = el.querySelector('#chatMic');
+    const recBar = el.querySelector('#recBar');
+    const recText = el.querySelector('#recText');
+    const MAX_MS = 5 * 60 * 1000;
+
+    const SR = global.SpeechRecognition || global.webkitSpeechRecognition;
+    const voice = {
+      recording: false,
+      mediaRecorder: null,
+      chunks: [],
+      stream: null,
+      recog: null,
+      finalText: '',
+      capTimer: null,
+
+      async start() {
+        if (this.recording) return;
+        // 1) 拿麦克风 + 录原始音频
+        try {
+          this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (e) {
+          toastChat('麦克风权限被拒绝，无法录音'); return;
+        }
+        this.chunks = [];
+        try {
+          this.mediaRecorder = new MediaRecorder(this.stream);
+          this.mediaRecorder.ondataavailable = (ev) => { if (ev.data.size) this.chunks.push(ev.data); };
+          this.mediaRecorder.start();
+        } catch (e) { /* 某些环境不支持指定 mime，忽略 */ }
+
+        // 2) 连续语音识别（拿文字稿；静音断开自动重启，缝合停顿）
+        this.finalText = '';
+        if (SR) {
+          this._startRecog();
+        }
+
+        this.recording = true;
+        micBtn.classList.add('rec');
+        recBar.classList.add('on');
+        recText.textContent = SR ? '正在聆听你说…' : '正在录音…(此浏览器不支持转写，仅存音频)';
+        this.capTimer = setTimeout(() => this.stop(), MAX_MS);
+      },
+
+      _startRecog() {
+        const r = new SR();
+        r.lang = 'zh-CN';
+        r.continuous = true;
+        r.interimResults = true;
+        let interim = '';
+        r.onresult = (ev) => {
+          interim = '';
+          for (let i = ev.resultIndex; i < ev.results.length; i++) {
+            const res = ev.results[i];
+            if (res.isFinal) this.finalText += res[0].transcript;
+            else interim += res[0].transcript;
+          }
+          recText.textContent = (this.finalText + interim).slice(-40) || '正在聆听你说…';
+        };
+        r.onend = () => {
+          // 录音还在进行 → 静音导致的自然结束，自动重启把停顿缝过去
+          if (this.recording) { try { r.start(); } catch (_) {} }
+        };
+        r.onerror = () => { /* no-speech 等错误交给 onend 重启 */ };
+        this.recog = r;
+        try { r.start(); } catch (_) {}
+      },
+
+      async stop() {
+        if (!this.recording) return;
+        this.recording = false;
+        clearTimeout(this.capTimer);
+        micBtn.classList.remove('rec');
+        recBar.classList.remove('on');
+
+        if (this.recog) { try { this.recog.stop(); } catch (_) {} this.recog = null; }
+
+        // 收尾音频 → Blob → 存 IndexedDB
+        const finish = async () => {
+          let audioId = null;
+          if (this.chunks.length) {
+            const blob = new Blob(this.chunks, { type: (this.mediaRecorder && this.mediaRecorder.mimeType) || 'audio/webm' });
+            audioId = 'rec_' + Date.now();
+            try { await AudioStore.save(audioId, blob); } catch (_) { audioId = null; }
+          }
+          if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+
+          const said = this.finalText.trim();
+          if (said) {
+            respond(said, audioId ? { audioId } : undefined);
+          } else if (audioId) {
+            respond('（我说了一段话，转写没成功，但录音留下了）', { audioId });
+          } else {
+            toastChat('没录到内容');
+          }
+        };
+
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+          this.mediaRecorder.onstop = finish;
+          try { this.mediaRecorder.stop(); } catch (_) { finish(); }
+        } else {
+          finish();
+        }
+      },
+
+      toggle() { this.recording ? this.stop() : this.start(); },
+    };
+
+    micBtn.onclick = () => voice.toggle();
+
+    // 敲两下戒指 → 收到 DBLTAP 手势 → toggle 录音（wireGestureOnce 只挂一次全局监听，指向当前录音器）
+    activeVoiceToggle = () => voice.toggle();
+    wireGestureOnce();
+
+    function toastChat(msg) { recText.textContent = msg; recBar.classList.add('on'); setTimeout(() => recBar.classList.remove('on'), 1600); }
 
     opening();
   }

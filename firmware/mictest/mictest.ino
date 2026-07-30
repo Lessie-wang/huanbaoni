@@ -7,9 +7,9 @@
  *   VDD  -> 3V3
  *   GND  -> GND
  *   L/R  -> GND        (拉低=左声道)
- *   WS   -> GPIO16     (LRCL / LRC)
- *   SCK  -> GPIO15     (BCLK / CLK)
- *   SD   -> GPIO17     (DOUT / DO)
+ *   WS   -> GPIO7      (LRCL / LRC)   ← 避开马达占用的 GPIO5
+ *   SCK  -> GPIO4      (BCLK / CLK)
+ *   SD   -> GPIO6      (DOUT / DO)
  *
  * 需要 esp32 开发板包 v3.x (含 ESP_I2S 库, 随核心自带, 不用额外装)。
  * 烧录: 线插 A 口; 看串口: 线插 B 口, 115200。
@@ -19,9 +19,9 @@
 #include <ESP_I2S.h>
 #include <math.h>
 
-#define I2S_SCK 15   // BCLK
-#define I2S_WS  16   // LRCL
-#define I2S_SD  17   // DOUT
+#define I2S_SCK 4    // BCLK
+#define I2S_WS  7    // LRCL  (避开马达 GPIO5)
+#define I2S_SD  6    // DOUT
 
 I2SClass I2S;
 
@@ -55,9 +55,9 @@ void loop() {
   }
   double rms = sqrt(sumsq / n);
 
-  // 映射到 0~100 的响度 (对数, 经验缩放)
+  // 映射到 0~100 的响度 (对数标定: 安静≈2万 -> 0, 大声≈40万 -> 100)
   int level = 0;
-  if (rms > 1) level = (int)((20.0 * log10(rms) - 40.0) * 3.0);
+  if (rms > 1) level = (int)((log10(rms) - 4.3) * 77.0);
   if (level < 0) level = 0; if (level > 100) level = 100;
 
   // 画个简单的响度条

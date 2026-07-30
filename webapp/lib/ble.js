@@ -15,13 +15,16 @@
   const HR_UUID      = '19b10003-e8f2-537e-4f6c-d104768a1214';
   const HRV_UUID     = '19b10005-e8f2-537e-4f6c-d104768a1214';
   const GSR_UUID     = '19b10006-e8f2-537e-4f6c-d104768a1214';
+  const MOTION_UUID  = '19b10007-e8f2-537e-4f6c-d104768a1214';   // 运动量上行(六轴)
   const CMD_UUID     = '19b10008-e8f2-537e-4f6c-d104768a1214';
+  const GESTURE_UUID = '19b10009-e8f2-537e-4f6c-d104768a1214';   // 手势上行(敲击唤醒)
   const DEVICE_NAME  = 'HuanbaoNi';
 
   class BleRing {
     constructor() {
       this._dataCbs = [];
       this._statusCbs = [];
+      this._gestureCbs = [];
       this._device = null;
       this._server = null;
       this._cmdCh = null;
@@ -29,7 +32,7 @@
       this._dec = new TextDecoder();
       this._enc = new TextEncoder();
       // 最近一次各通道值，任一通道更新即合并上报
-      this._last = { hr: 0, hrv: 0, gsr: undefined, ts: 0 };
+      this._last = { hr: 0, hrv: 0, gsr: undefined, motion: undefined, ts: 0 };
       this._onDisc = this._onDisc.bind(this);
     }
 
@@ -85,6 +88,27 @@
           await gsrCh.startNotifications();
         } catch (_) { /* 无 GSR，跳过 */ }
 
+        // MOTION Notify（六轴运动量，可选）
+        try {
+          const mCh = await svc.getCharacteristic(MOTION_UUID);
+          mCh.addEventListener('characteristicvaluechanged', (e) => {
+            this._last.motion = parseFloat(this._dec.decode(e.target.value));
+            this._emit();
+          });
+          await mCh.startNotifications();
+        } catch (_) { /* 无 MOTION，跳过 */ }
+
+        // GESTURE Notify（敲击唤醒，可选）
+        try {
+          const gCh = await svc.getCharacteristic(GESTURE_UUID);
+          gCh.addEventListener('characteristicvaluechanged', (e) => {
+            const g = this._dec.decode(e.target.value).trim();
+            this._gestureCbs.forEach((cb) => cb(g));
+            global.dispatchEvent(new CustomEvent('ring:gesture', { detail: { gesture: g } }));
+          });
+          await gCh.startNotifications();
+        } catch (_) { /* 无 GESTURE，跳过 */ }
+
         // 指令下行（震动）
         try { this._cmdCh = await svc.getCharacteristic(CMD_UUID); }
         catch (_) { this._cmdCh = null; }
@@ -105,9 +129,18 @@
       this._setStatus('disconnected');
     }
 
-    async vibrate(mode = 'short') {
+    // 三档干预触觉（见 docs/接口契约.md §1）
+    //   intercept → 档三·早期拦截（单次轻促短震）
+    //   anchor    → 档二·实时锚点（共振呼吸 吸4·呼6，渐强渐弱 x3）
+    //   retreat   → 档一·撤退许可（两下长震）
+    async vibrate(mode = 'anchor') {
       if (!this._cmdCh) { console.warn('[BleRing] 无 CMD 通道，无法震动'); return; }
-      const cmd = (mode === 'long') ? 'VIBRATE:LONG' : 'VIBRATE';
+      const CMD = {
+        intercept: 'VIBRATE:INTERCEPT',
+        anchor:    'VIBRATE:ANCHOR',
+        retreat:   'VIBRATE:RETREAT',
+      };
+      const cmd = CMD[mode] || 'VIBRATE'; // 未知/无参 → 兼容旧固件，等同 ANCHOR
       try {
         await this._cmdCh.writeValue(this._enc.encode(cmd));
         global.dispatchEvent(new CustomEvent('ring:vibrate', { detail: { mode } }));
@@ -118,11 +151,12 @@
 
     onData(cb) { if (typeof cb === 'function') this._dataCbs.push(cb); }
     onStatus(cb) { if (typeof cb === 'function') this._statusCbs.push(cb); }
+    onGesture(cb) { if (typeof cb === 'function') this._gestureCbs.push(cb); }
 
     // ---- 内部 ----
     _emit() {
       this._last.ts = Date.now();
-      const d = { hr: this._last.hr, hrv: this._last.hrv, gsr: this._last.gsr, ts: this._last.ts };
+      const d = { hr: this._last.hr, hrv: this._last.hrv, gsr: this._last.gsr, motion: this._last.motion, ts: this._last.ts };
       this._dataCbs.forEach((cb) => cb(d));
     }
     _setStatus(s) { this._status = s; this._statusCbs.forEach((cb) => cb(s)); }
