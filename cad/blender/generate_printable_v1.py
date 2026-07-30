@@ -478,12 +478,12 @@ def wireframe_png(meshes, path, camera=(0.62, -0.78, 0.56), width=1200, height=8
     write_png(path, width, height, pixels)
 
 
-def solid_png(meshes, path, camera=(0.62, -0.78, 0.56), width=1000, height=900):
+def solid_png(meshes, path, camera=(0.62, -0.78, 0.56), width=1000, height=900, palette=None):
     camera_direction = normalize(camera)
     right = normalize(cross((0, 0, 1), camera_direction))
     up = normalize(cross(camera_direction, right))
     light = normalize((0.35, -0.45, 0.82))
-    palette = [(218, 184, 165), (167, 194, 178), (225, 215, 205), (123, 117, 111)]
+    palette = palette or [(218, 184, 165), (167, 194, 178), (225, 215, 205), (123, 117, 111)]
     projected_meshes = []
     all_points = []
     for mesh_index, mesh in enumerate(meshes):
