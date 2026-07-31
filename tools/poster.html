@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { width: 210mm; height: 297mm; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #3A352F;
+    background:
+      radial-gradient(120% 55% at 50% -8%, rgba(232,214,199,.55), transparent 62%),
+      radial-gradient(80% 45% at 50% 108%, rgba(212,184,165,.28), transparent 60%),
+      #FAF8F5;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 30mm 22mm;
+    text-align: center;
+  }
+  .logo { width: 26mm; height: auto; }
+  .brand { font-size: 12pt; letter-spacing: 6pt; color: #B89A83; margin-top: 7mm; font-weight: 500; }
+
+  h1 {
+    font-family: "Songti SC","STSong","Noto Serif SC",serif;
+    font-size: 33pt; font-weight: 600; color: #3A352F; line-height: 1.5;
+    margin-top: 16mm; letter-spacing: 2pt;
+  }
+  h1 .em { color: #B89A83; }
+  .sub {
+    font-size: 13pt; color: #8C8780; margin-top: 8mm; line-height: 1.9;
+    letter-spacing: 1pt; font-weight: 400;
+  }
+
+  /* 二维码 —— 主角，放大 */
+  .qr {
+    margin-top: auto; margin-bottom: auto;
+    width: 92mm; height: 92mm; padding: 7mm;
+    background: #fff; border-radius: 8mm;
+    box-shadow: 0 10mm 30mm rgba(184,154,131,.20);
+  }
+  .qr img { width: 100%; height: 100%; display: block; }
+  .scan { font-size: 15pt; color: #3A352F; letter-spacing: 3pt; margin-top: 9mm; font-weight: 500; }
+
+  .tip {
+    font-size: 10.5pt; color: #A69E94; margin-top: 11mm; line-height: 1.9;
+    letter-spacing: .5pt; max-width: 150mm;
+  }
+  .tip b { color: #B89A83; font-weight: 600; }
+</style>
+</head>
+<body>
+  <img class="logo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzIiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA3MiA2NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IueOr+aKseS9oCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImhiV2FybSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiICBzdG9wLWNvbG9yPSIjRTZDOUI0Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iNTUlIiBzdG9wLWNvbG9yPSIjRDRCOEE1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI0I4OUE4MyIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2hiV2FybSkiIHN0cm9rZS13aWR0aD0iNS4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiPgogICAgPHBhdGggZD0iTTM2IDUxIEMgMjAgNDIsIDEzIDMwLCAxOCAyMSBDIDIyIDEzLCAzMiAxMywgMzYgMjIiLz4KICAgIDxwYXRoIGQ9Ik0zNiA1MSBDIDUyIDQyLCA1OSAzMCwgNTQgMjEgQyA1MCAxMywgNDAgMTMsIDM2IDIyIi8+CiAgPC9nPgogIDxjaXJjbGUgY3g9IjM2IiBjeT0iMjUiIHI9IjIuMyIgZmlsbD0iI0U2QzlCNCIgb3BhY2l0eT0iMC45MiIvPgo8L3N2Zz4K" alt="环抱你">
+  <div class="brand">知 愈 · 环 抱 你</div>
+
+  <h1>来测测<br>你是什么 <span class="em">HBTI</span> 人格<br>今日的<span class="em">心灵画像</span>又是什么模样</h1>
+
+  <div class="sub">一个读懂情绪的伙伴<br>为你生成，只属于此刻的内心图景</div>
+
+  <div class="qr">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAJYAQMAAACEqAqfAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABzUlEQVR4nO3X0W7DIBAEQPvL8+dQKQ3nw+BWaiO1IbMPCGPf8Ljytj0xtzpJvP3c11r6oX02VFgsFovF+mur/y7mj7Unyn0z6iwWi8VirWbVlmF+a2/LefJo3MJisVgs1ptYp5NuhsVisVisd7WmpfvDrmWxWCwW6zWtnJr0timDUvohFovFYrFWs8Zk8b5e/YXmsFgsFou1jvVFMv3bsFgsFov1UtatdslEPeo2/3zus+otLBaLxWKtZJ1S+2ZNep45DbNYLBaLtaCVazUy0HsSrzYsFovFYq1j5aTh7jCNzSp6es5isVgs1stat/tXMXCxKenyvR7JjywWi8Vi/Tcr9vHYkpUTd7+MxWKxWKyFrBHKa5oJsa/Yx76wWCwWi7WYNU0wR5vG2HGSLmCxWCwWay0rjT1aNovH10fF1gnKYrFYLNYq1lWCzje1+a3p9XuIxWKxWKwXtG51kjzfj+2ztd3BYrFYLNZC1tiyuWLbpjR07NqdxWKxWKwlrdoSVjwmK2p1GhaLxWKx3sLauuSWjZPadTCLxWKxWG9gpeQf0ViHVywWi8VirWXljNZ2zj7cxGKxWCzWataYsNqmzIhQ2p7FYrFYrFWsJ+YDLsfnrvY/u1MAAAAASUVORK5CYII=" alt="扫码体验">
+  </div>
+  <div class="scan">扫 码 · 即 刻 体 验</div>
+
+  <div class="tip">
+    请连接 <b>2F 赛区 5G 网络</b>，与现场同一网络方可体验<br>
+    体验人数较多时，画像生成需稍候片刻，请勿刷新 · 静待即可
+  </div>
+</body>
+</html>

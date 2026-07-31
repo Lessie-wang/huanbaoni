@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>环抱你 · 巨幅展位海报 (A1 / 8×A4)</title>
+<style>
+  :root{
+    --paper:#F6F1E9; --paper2:#EFE7DB; --cream:#FAF7F2;
+    --ink:#332E28; --ink2:#5A5248; --sub:#928A7E;
+    --gold:#B08A5A; --gold-lt:#CBA876; --gold-dk:#8E6B44;
+    --champ:#D9BFA7; --silk:#E7C6AC;
+    --calm:#9FBBA9; --mid:#E3CB93; --high:#D69A84;
+    --line:rgba(140,120,95,.24);
+    --card:rgba(255,255,255,.60);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+  html,body{background:#d9d2c7;font-family:"PingFang SC","Hiragino Sans GB",sans-serif;}
+  .wall{
+    position:relative; width:1680px; height:1188px; overflow:hidden; color:var(--ink);
+    background:
+      radial-gradient(120% 80% at 16% 26%, #FBF8F3 0%, #F4EEE4 48%, #EAE0D1 100%),
+      linear-gradient(180deg,#F7F2EA,#EEE4D6);
+  }
+  .glow-l{position:absolute;left:-160px;top:120px;width:900px;height:900px;
+    background:radial-gradient(46% 42% at 42% 46%, rgba(231,198,172,.40), rgba(231,198,172,0) 70%);
+    filter:blur(8px);pointer-events:none;}
+  .glow-r{position:absolute;right:-200px;top:-120px;width:760px;height:760px;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(159,187,169,.16), rgba(159,187,169,0) 70%);pointer-events:none;}
+  .glow-b{position:absolute;right:60px;bottom:-220px;width:900px;height:560px;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(214,154,132,.14), rgba(214,154,132,0) 70%);pointer-events:none;}
+  .frame{position:absolute;inset:22px;border:1px solid var(--line);border-radius:12px;pointer-events:none;}
+  .grain{position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:multiply;}
+  .vign{position:absolute;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 320px rgba(120,98,70,.16), inset 0 0 90px rgba(120,98,70,.06);}
+  .col-rule{position:absolute;top:150px;bottom:70px;width:1px;
+    background:linear-gradient(180deg,transparent,var(--line) 8%,var(--line) 92%,transparent);}
+
+  /* ===== top bar ===== */
+  .top{position:absolute;left:60px;right:60px;top:44px;height:46px;display:flex;align-items:center;justify-content:space-between;}
+  .brand{display:flex;align-items:center;gap:16px;}
+  .brand .name{font-family:"Songti SC",serif;font-weight:700;font-size:24px;letter-spacing:4px;color:var(--ink);}
+  .brand .name b{color:var(--gold-dk);}
+  .kick{font:600 15px/1 "SF Mono","Menlo",monospace;letter-spacing:3.6px;color:var(--gold-dk);display:flex;align-items:center;gap:16px;}
+  .kick .dot{width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,var(--gold-lt),var(--gold-dk));}
+  .kick .tag{padding:8px 16px;border:1px solid var(--line);border-radius:22px;color:var(--ink2);letter-spacing:3px;background:rgba(255,255,255,.42);}
+  .rule{position:absolute;left:60px;right:60px;top:112px;height:1px;
+    background:linear-gradient(90deg,transparent,var(--line) 10%,var(--line) 90%,transparent);}
+
+  /* ===== LEFT identity column ===== */
+  .idc{position:absolute;left:60px;top:150px;width:560px;height:1010px;}
+  .headline{position:relative;display:flex;align-items:flex-start;justify-content:center;margin-top:26px;white-space:nowrap;}
+  .headline .zh{font-family:"Songti SC","STSong",serif;font-weight:900;font-size:112px;line-height:.92;letter-spacing:4px;
+    background:linear-gradient(160deg,#5A4632 0%,#8E6B44 36%,#C09A63 72%,#8E6B44 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 1px 0 rgba(255,255,255,.4);}
+  .headline .br{font-family:"Songti SC",serif;font-weight:400;font-size:88px;line-height:1.02;color:var(--gold-lt);opacity:.72;}
+  .subhead{margin-top:16px;display:flex;align-items:center;justify-content:center;gap:16px;}
+  .subhead .bar{width:46px;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold-lt));}
+  .subhead .t{font-size:26px;letter-spacing:6px;color:var(--ink);font-weight:500;}
+
+  .stage{position:absolute;left:0;top:250px;width:560px;height:560px;}
+  .ring-wrap{position:absolute;left:50%;top:250px;transform:translate(-50%,-50%);width:512px;height:512px;}
+  .hero{position:absolute;left:50%;top:246px;transform:translate(-50%,-50%);width:400px;
+    filter:drop-shadow(0 28px 30px rgba(120,92,62,.24)) drop-shadow(0 10px 12px rgba(120,92,62,.14));}
+  .shadow{position:absolute;left:50%;top:456px;transform:translate(-50%,0);width:300px;height:44px;border-radius:50%;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(90,70,48,.26), rgba(90,70,48,0) 72%);filter:blur(4px);}
+  .heart-glow{position:absolute;left:196px;top:214px;width:86px;height:86px;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(214,120,96,.5), rgba(214,120,96,0) 70%);filter:blur(3px);}
+  .heart-ico{position:absolute;left:218px;top:238px;width:42px;height:42px;filter:drop-shadow(0 0 7px rgba(214,120,96,.6));}
+  .scale-tags{position:absolute;left:0;right:0;top:512px;display:flex;justify-content:center;gap:30px;
+    font:600 13px/1 "SF Mono","Menlo",monospace;letter-spacing:1.6px;color:var(--sub);}
+  .scale-tags i{font-style:normal;display:inline-flex;align-items:center;gap:7px;}
+  .scale-tags .d{width:9px;height:9px;border-radius:50%;}
+
+  .idcap{position:absolute;left:0;right:0;top:838px;text-align:center;}
+  .idcap .t{font-family:"Songti SC",serif;font-size:27px;letter-spacing:2px;color:var(--ink);font-weight:700;}
+  .idcap .t b{color:var(--gold-dk);}
+  .idcap .s{margin-top:11px;font-size:14px;letter-spacing:2px;color:var(--sub);}
+  .idpoem{position:absolute;left:0;right:0;top:918px;text-align:center;
+    font-family:"STKaiti","Kaiti SC",serif;font-size:22px;line-height:1.7;letter-spacing:1.5px;color:var(--ink);}
+  .idpoem b{color:var(--gold-dk);font-weight:400;}
+
+  /* ===== RIGHT stacked story ===== */
+  .rc{position:absolute;left:690px;right:60px;top:150px;}
+  .sect{display:flex;align-items:center;gap:16px;}
+  .sect .k{font:700 15px/1 "SF Mono","Menlo",monospace;letter-spacing:3px;color:var(--gold-dk);}
+  .sect .h{font-family:"Songti SC",serif;font-weight:700;font-size:26px;letter-spacing:1px;color:var(--ink);}
+  .sect .cap{font-size:15px;color:var(--sub);letter-spacing:1px;margin-left:2px;}
+  .sect .ln{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent);}
+
+  /* R1 hardware */
+  .r1{position:absolute;left:690px;right:60px;top:150px;height:392px;}
+  .r1 .body{position:absolute;left:0;top:52px;right:0;bottom:0;display:flex;gap:26px;}
+  .r1 .exp{flex:0 0 300px;position:relative;}
+  .r1 .exp img{position:absolute;left:0;top:4px;width:300px;height:300px;object-fit:cover;
+    filter:drop-shadow(0 18px 26px rgba(120,92,62,.26)) drop-shadow(0 6px 10px rgba(120,92,62,.14));}
+  .r1 .exp .badge{position:absolute;left:12px;top:16px;z-index:2;padding:5px 12px;border-radius:20px;
+    font:700 12px/1 "PingFang SC";letter-spacing:2px;color:#fff;
+    background:linear-gradient(135deg,var(--gold-lt),var(--gold-dk));box-shadow:0 4px 10px rgba(120,92,62,.28);}
+  .r1 .exp .cap{position:absolute;left:0;bottom:0;width:300px;text-align:center;font:600 12px/1.3 "PingFang SC";letter-spacing:.6px;color:var(--sub);}
+  .r1 .right{flex:1;display:flex;flex-direction:column;gap:12px;}
+  .hrv{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.30));
+    border:1px solid var(--line);border-radius:14px;padding:11px 16px;display:flex;gap:16px;align-items:center;height:118px;}
+  .hrv .lab{flex:0 0 156px;}
+  .hrv .lab .k{font:700 11px/1 "SF Mono",monospace;letter-spacing:2px;color:var(--gold-dk);}
+  .hrv .lab .h{font-family:"Songti SC",serif;font-weight:700;font-size:21px;color:var(--ink);margin-top:7px;white-space:nowrap;}
+  .hrv .lab .p{font-size:11px;line-height:1.55;color:var(--sub);margin-top:6px;}
+  .hrv .chart{flex:1;height:96px;}
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .chip{display:flex;gap:11px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:10px 12px;}
+  .chip .ic{flex:0 0 auto;width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;}
+  .chip .tx .tt{font-size:15.5px;font-weight:600;color:var(--ink);letter-spacing:.5px;}
+  .chip .tx .tt span{font-size:11px;color:var(--gold-dk);font-weight:600;margin-left:6px;letter-spacing:0;}
+  .chip .tx .dd{font-size:11.5px;line-height:1.5;color:var(--ink2);margin-top:4px;}
+
+  /* R2 software */
+  .r2{position:absolute;left:690px;right:60px;top:556px;height:350px;}
+  .apps{position:absolute;left:0;right:0;top:52px;display:flex;justify-content:space-between;gap:18px;}
+  .phone{width:118px;}
+  .phone .scr{position:relative;width:118px;height:255px;border-radius:20px;background:#201d19;
+    padding:5px;box-shadow:0 16px 30px rgba(120,92,62,.20);}
+  .phone .scr img{width:100%;height:100%;object-fit:cover;border-radius:17px;display:block;}
+  .phone .nt{position:absolute;left:50%;top:11px;transform:translateX(-50%);width:44px;height:11px;border-radius:6px;background:#0c0b0c;z-index:2;}
+  .phone .lb{text-align:center;margin-top:12px;overflow:visible;white-space:nowrap;}
+  .phone .lb b{font-size:15px;font-weight:600;color:var(--ink);letter-spacing:.5px;}
+  .phone .lb i{display:block;font-style:normal;font-size:11px;color:var(--sub);margin-top:3px;letter-spacing:.3px;}
+
+  /* R3 next world */
+  .r3{position:absolute;left:690px;right:60px;top:944px;height:210px;}
+  .r3 .body{position:absolute;left:0;right:0;top:52px;display:flex;align-items:flex-end;justify-content:space-between;gap:30px;}
+  .r3 .mani{max-width:600px;}
+  .r3 .mani .m{font-size:19px;line-height:1.85;color:var(--ink2);letter-spacing:.5px;}
+  .r3 .mani .m b{color:var(--ink);font-weight:600;}
+  .r3 .mani .slogan{margin-top:16px;font-family:"Songti SC",serif;font-weight:800;font-size:52px;letter-spacing:3px;
+    background:linear-gradient(120deg,#8E6B44,#C09A63);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .r3 .side{flex:0 0 auto;text-align:right;padding-bottom:6px;}
+  .r3 .side .play{display:inline-flex;align-items:center;gap:9px;padding:9px 15px;border:1px solid var(--line);
+    border-radius:22px;background:rgba(255,255,255,.5);font-size:14px;color:var(--ink2);letter-spacing:1px;}
+  .r3 .side .play .tri{width:0;height:0;border-left:11px solid var(--gold-dk);border-top:7px solid transparent;border-bottom:7px solid transparent;}
+  .r3 .side .series{margin-top:14px;font:600 12px/1.8 "SF Mono",monospace;letter-spacing:2px;color:var(--sub);}
+</style>
+</head>
+<body>
+<div class="wall" id="wall">
+  <div class="glow-l"></div><div class="glow-r"></div><div class="glow-b"></div>
+
+  <!-- top bar -->
+  <div class="top">
+    <div class="brand">
+      <svg width="38" height="34" viewBox="0 0 72 64">
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#CBA876"/><stop offset="1" stop-color="#8E6B44"/></linearGradient></defs>
+        <g fill="none" stroke="url(#g1)" stroke-width="5.2" stroke-linecap="round">
+          <path d="M36 51 C 20 42, 13 30, 18 21 C 22 13, 32 13, 36 22"/>
+          <path d="M36 51 C 52 42, 59 30, 54 21 C 50 13, 40 13, 36 22"/></g>
+        <circle cx="36" cy="25" r="2.3" fill="#CBA876"/></svg>
+      <div class="name">知愈 · Ring <b>真系列</b></div>
+    </div>
+    <div class="kick">
+      <span class="tag">软 硬 兼 得</span><span class="dot"></span>
+      <span>BUILDATHON&nbsp;2026 · NEXT&nbsp;WORLD</span>
+    </div>
+  </div>
+  <div class="rule"></div>
+  <div class="col-rule" style="left:658px;"></div>
+
+  <!-- ===== LEFT identity ===== -->
+  <div class="idc">
+    <div class="headline"><span class="br">「</span><span class="zh">环抱你</span><span class="br">」</span></div>
+    <div class="subhead"><span class="bar"></span><span class="t">会环抱你的情绪伙伴</span><span class="bar"></span></div>
+    <div class="stage">
+      <svg class="ring-wrap" viewBox="0 0 500 500">
+        <defs>
+          <linearGradient id="pg" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#9FBBA9"/><stop offset="0.5" stop-color="#E3CB93"/><stop offset="1" stop-color="#D69A84"/></linearGradient>
+          <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+        </defs>
+        <g fill="none" stroke="#B79C7E" opacity="0.14">
+          <circle cx="250" cy="250" r="150" stroke-width="1"/><circle cx="250" cy="250" r="192" stroke-width="1"/>
+          <circle cx="250" cy="250" r="236" stroke-width="1" stroke-dasharray="2 7"/></g>
+        <circle cx="250" cy="250" r="210" fill="none" stroke="url(#pg)" stroke-width="15" opacity="0.16" filter="url(#soft)" stroke-dasharray="990 1320" transform="rotate(135 250 250)"/>
+        <circle cx="250" cy="250" r="210" fill="none" stroke="url(#pg)" stroke-width="6" stroke-linecap="round" stroke-dasharray="990 1320" transform="rotate(135 250 250)"/>
+        <circle cx="250" cy="250" r="176" fill="none" stroke="#C9B291" stroke-width="1" opacity="0.5"/>
+      </svg>
+      <div class="shadow"></div>
+      <img class="hero" src="hero.png" alt="环抱你">
+      <div class="heart-glow"></div>
+      <svg class="heart-ico" viewBox="0 0 32 28" fill="none">
+        <path d="M16 25C16 25 3 17.5 3 9.2 3 5.2 6 3 9.2 3c2.3 0 3.9 1.2 4.8 2.6h4C18.9 4.2 20.5 3 22.8 3 26 3 29 5.2 29 9.2 29 17.5 16 25 16 25Z" fill="rgba(214,120,96,0.28)" stroke="#C85A44" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M4 13.5h6l2-4 3 8 2.5-6 1.6 3H28" stroke="#C85A44" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <div class="scale-tags">
+        <i><span class="d" style="background:var(--calm)"></span>舒展</i>
+        <i><span class="d" style="background:var(--mid)"></span>波动</i>
+        <i><span class="d" style="background:var(--high)"></span>紧绷</i>
+      </div>
+    </div>
+    <div class="idcap">
+      <div class="t">先环抱自己，<b>再环抱你</b></div>
+      <div class="s">白色身体 · 鎏光香槟手臂 · 未来集成于指间</div>
+    </div>
+    <div class="idpoem">你的身体，比你先知道 ——<br>它，是身体递给意识的<b>那张纸条</b>。</div>
+  </div>
+
+  <!-- ===== R1 hardware ===== -->
+  <div class="r1">
+    <div class="sect"><span class="k">HARDWARE</span><span class="h">无感采集层</span><span class="cap">· 戴上即感知，记录成本归零</span><span class="ln"></span></div>
+    <div class="body">
+      <div class="exp"><span class="badge">真机实拍</span><img src="hw_real.png" alt="真机"><div class="cap">小白 · ESP32-S3 + 五传感器 · 现场手作</div></div>
+      <div class="right">
+        <div class="hrv">
+          <div class="lab"><div class="k">PRE-CONSCIOUS</div><div class="h">身体比你先知道</div>
+            <div class="p">HRV 在你意识到之前先塌陷<br>抓住那 10–20 秒预警窗</div></div>
+          <svg class="chart" viewBox="0 0 560 128" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D69A84" stop-opacity="0.28"/><stop offset="1" stop-color="#D69A84" stop-opacity="0"/></linearGradient>
+              <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9FBBA9"/><stop offset="0.55" stop-color="#E3CB93"/><stop offset="1" stop-color="#D69A84"/></linearGradient>
+            </defs>
+            <line x1="0" y1="44" x2="560" y2="44" stroke="#CBB79B" stroke-width="1" stroke-dasharray="2 6" opacity="0.6"/>
+            <path d="M0,46 C40,40 70,52 100,44 C130,36 160,50 195,46 C230,42 250,64 275,88 C300,110 330,116 360,112 C400,106 440,104 480,102 C510,101 540,102 560,101" fill="none" stroke="url(#stroke)" stroke-width="3" stroke-linecap="round"/>
+            <path d="M0,46 C40,40 70,52 100,44 C130,36 160,50 195,46 C230,42 250,64 275,88 C300,110 330,116 360,112 C400,106 440,104 480,102 C510,101 540,102 560,101 L560,128 L0,128 Z" fill="url(#area)"/>
+            <line x1="248" y1="10" x2="248" y2="118" stroke="#B08A5A" stroke-width="1.4" stroke-dasharray="4 4"/><circle cx="248" cy="60" r="4.5" fill="#B08A5A"/>
+            <line x1="392" y1="10" x2="392" y2="118" stroke="#9A9186" stroke-width="1.4" stroke-dasharray="4 4"/><circle cx="392" cy="109" r="4.5" fill="#7C7368"/>
+            <line x1="248" y1="20" x2="392" y2="20" stroke="#B08A5A" stroke-width="1" opacity="0.7"/>
+            <text x="320" y="15" text-anchor="middle" font-family="SF Mono,Menlo,monospace" font-size="10" fill="#8E6B44" letter-spacing="1">≈10–20s</text>
+            <text x="248" y="128" text-anchor="middle" font-family="PingFang SC" font-size="11" fill="#8E6B44" font-weight="700">身体先知道</text>
+            <text x="392" y="128" text-anchor="middle" font-family="PingFang SC" font-size="11" fill="#7C7368">你才察觉</text>
+          </svg>
+        </div>
+        <div class="chips">
+          <div class="chip"><span class="ic" style="background:rgba(214,154,132,.22)">
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="#BE7B62" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16h5l2-5 3 10 3-13 3 9 2-3h4"/></svg></span>
+            <div class="tx"><div class="tt">心率 · HRV<span>MAX30102</span></div><div class="dd">光学采集，衡量绷紧还是放松</div></div></div>
+          <div class="chip"><span class="ic" style="background:rgba(159,187,169,.24)">
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="#5E8570" stroke-width="1.8" stroke-linecap="round"><path d="M16 4c3 6 8 7 8 13a8 8 0 01-16 0c0-6 5-7 8-13z"/></svg></span>
+            <div class="tx"><div class="tt">皮肤电 GSR<span>唤醒</span></div><div class="dd">情绪唤醒，先于意识升高</div></div></div>
+          <div class="chip"><span class="ic" style="background:rgba(203,168,118,.26)">
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="#9C7A54" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="18" height="18" rx="3"/><path d="M13 13h6v6h-6z"/></svg></span>
+            <div class="tx"><div class="tt">运动 + 敲击<span>MPU6050</span></div><div class="dd">区分紧张与手部活动 · 敲两下唤醒</div></div></div>
+          <div class="chip"><span class="ic" style="background:rgba(214,154,132,.22)">
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="#BE7B62" stroke-width="1.8" stroke-linecap="round"><circle cx="16" cy="16" r="2.4" fill="#BE7B62" stroke="none"/><path d="M10.5 10.5a8 8 0 000 11M21.5 10.5a8 8 0 010 11"/></svg></span>
+            <div class="tx"><div class="tt">私密震动<span>三档</span></div><div class="dd">只有你知道的那一下：拦截·锚定·撤退</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== R2 software ===== -->
+  <div class="r2">
+    <div class="sect"><span class="k">SOFTWARE</span><span class="h">情绪炼金层</span><span class="cap">· 把冷数据，炼成一个心灵世界</span><span class="ln"></span></div>
+    <div class="apps">
+      <div class="phone"><div class="scr"><span class="nt"></span><img src="app_realtime.png"></div>
+        <div class="lb"><b>实时环抱</b><i>三色压力环 · 私密震动</i></div></div>
+      <div class="phone"><div class="scr"><span class="nt"></span><img src="app_portrait.png"></div>
+        <div class="lb"><b>今日心灵画像</b><i>AI 把情绪炼成画</i></div></div>
+      <div class="phone"><div class="scr"><span class="nt"></span><img src="app_chat.png"></div>
+        <div class="lb"><b>小知复盘</b><i>敲两下戒指，陪你说说</i></div></div>
+      <div class="phone"><div class="scr"><span class="nt"></span><img src="app_growth.png"></div>
+        <div class="lb"><b>心迹画廊</b><i>色调由灰转暖</i></div></div>
+    </div>
+  </div>
+
+  <!-- ===== R3 next world ===== -->
+  <div class="r3">
+    <div class="sect"><span class="k">NEXT WORLD</span><span class="h">我们想象的下一个世界</span><span class="ln"></span></div>
+    <div class="body">
+      <div class="mani">
+        <div class="m">不是一个更快、更强、逼人更完美的世界，<br>而是一个<b>允许脆弱、更温柔、更能理解自己、也理解彼此</b>的世界。</div>
+        <div class="slogan">用「环抱你」环抱你</div>
+      </div>
+      <div class="side">
+        <div class="play"><span class="tri"></span>现场循环播放 · 60s Demo</div>
+        <div class="series">HR · HRV · GSR · MOTION<br>PRIVATE HAPTIC · ESP32-S3</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame"></div>
+  <svg class="grain"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)" opacity="0.05"/></svg>
+  <div class="vign"></div>
+</div>
+</body>
+</html>

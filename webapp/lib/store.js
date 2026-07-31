@@ -16,8 +16,21 @@
 
   // 写死默认 API（零配置即可跑通）——与 feature/h5-publish 上线版保持一致。
   // useMock=true 只影响"戒指"数据（现场无真戒指→模拟心率/HRV），不影响 AI 通道。
+  //
+  // baseUrl 分两种场景（现场手机无内网 VPN，到不了 maas 10.35.x）：
+  //  · 局域网 IP 访问(经电脑代理跳板 serve-proxy.py) → 走同源 /hackson，由电脑转发到 maas；
+  //    同源还顺带免掉 CORS 和自签证书二次信任。
+  //  · 其它(github.io / localhost 桌面开发，本机有 VPN) → 直连 maas，保持原行为。
+  const _isLanHost = (() => {
+    try {
+      const h = location.hostname || '';
+      return /^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(h);
+    } catch (e) { return false; }
+  })();
   const DEFAULTS = {
-    apiBaseUrl: 'https://maas.devops.rednote.life/hackson',
+    apiBaseUrl: _isLanHost
+      ? (location.origin + '/hackson')
+      : 'https://maas.devops.rednote.life/hackson',
     apiKey: 'MAAS373ad9ff7c544476a499e77c9479b07b',
     useMock: true,
   };
@@ -92,8 +105,13 @@
     // 否则清过缓存/存过空值的用户会一直"AI 未配置"，chat 与生图全失败。
     getSettings() {
       const saved = _read(K.settings, {});
+      // 局域网(代理跳板)场景下，忽略可能残留的 maas 直连地址，强制走同源 /hackson，
+      // 否则老缓存里存过的 10.35.x 直连会让手机继续 Failed to fetch。
+      const base = _isLanHost
+        ? DEFAULTS.apiBaseUrl
+        : (saved.apiBaseUrl || DEFAULTS.apiBaseUrl);
       return {
-        apiBaseUrl: saved.apiBaseUrl || DEFAULTS.apiBaseUrl,
+        apiBaseUrl: base,
         apiKey: saved.apiKey || DEFAULTS.apiKey,
         useMock: (saved.useMock === undefined ? DEFAULTS.useMock : saved.useMock),
       };
