@@ -275,13 +275,19 @@ void mpuUpdate() {
 
 void setup() {
   Serial.begin(115200);
-  delay(300);
+  delay(1500);          // 等 ESP32-S3 的 USB-CDC 枚举完, 否则开机自检的串口打印会被吞掉
   Serial.println("\n=== 环抱你 戒指启动 ===");
 
   // 马达用 LEDC(PWM) 驱动, 支持强度渐变(呼吸档渐强渐弱)
   // ESP32 Arduino core v3.x API: ledcAttach(pin, freq, resolution)
   ledcAttach(PIN_MOTOR, MOTOR_PWM_FREQ, MOTOR_PWM_RES);
   motorDuty(0);
+
+  // 开机自检: 震两下, 独立于传感器/BLE 验证马达线是否通
+  // (看不到震动 = GPIO5/GND/VCC 接线或驱动板问题, 与 BLE/手指无关)
+  Serial.println("[自检] 马达震两下...");
+  motorDuty(200); delay(250); motorDuty(0); delay(200);
+  motorDuty(200); delay(250); motorDuty(0);
 
   // I2C + MAX30102
   Wire.begin(PIN_SDA, PIN_SCL);
