@@ -99,13 +99,15 @@
           </svg>
           <div class="rt-center">
             <div class="rt-hr" id="rtHr">--</div>
-            <div class="rt-unit">BPM</div>
+            <div class="rt-unit">BPM · 实时心率</div>
             <div class="rt-level" id="rtLevel">等待连接</div>
           </div>
         </div>
 
         <div class="rt-meta">
-          <div class="rt-meta-item"><div class="v" id="rtHrv">--</div><div class="k">HRV (ms)</div></div>
+          <div class="rt-meta-item"><div class="v" id="rtHrv">--</div><div class="k">HRV (ms)</div><div class="d">心率变异性·越高越放松</div></div>
+          <div class="rt-meta-item"><div class="v" id="rtGsr">--</div><div class="k">皮肤电</div><div class="d">情绪唤醒·先于意识升高</div></div>
+          <div class="rt-meta-item"><div class="v" id="rtMotion">--</div><div class="k">运动 (°/s)</div><div class="d">手部活动·区分紧张与运动</div></div>
           <div class="rt-meta-item"><div class="v" id="rtHug">0</div><div class="k">今日被环抱</div></div>
         </div>
 
@@ -123,6 +125,16 @@
           </div>
         </div>
 
+        <div class="rt-trend card">
+          <div class="rt-tl-title">今日情绪起伏 · 24h</div>
+          <div id="rtTrend"></div>
+          <div class="rt-trend-legend">
+            <span><i class="hi"></i>压力升高</span>
+            <span><i class="calm-band"></i>平静地带</span>
+            <span><i class="lo"></i>越发平静</span>
+          </div>
+        </div>
+
         <div class="rt-timeline card">
           <div class="rt-tl-title">今日心迹</div>
           <div id="rtTimeline"></div>
@@ -134,6 +146,7 @@
     wire();
     refreshTimeline();
     refreshHug();
+    renderTrend();
   }
 
   function wire() {
@@ -180,6 +193,8 @@
   }
 
   let lastData = null;
+  let lastTrendTs = 0;
+  let timelineExpanded = false;
 
   function bindRing() {
     if (bound) return; bound = true;
@@ -213,9 +228,13 @@
     lastData = d;
     const hrEl = el && el.querySelector('#rtHr');
     const hrvEl = el && el.querySelector('#rtHrv');
+    const gsrEl = el && el.querySelector('#rtGsr');
+    const motEl = el && el.querySelector('#rtMotion');
     if (!hrEl) return;
     hrEl.textContent = d.hr || '--';
     hrvEl.textContent = d.hrv ? (d.hrv.toFixed ? d.hrv.toFixed(0) : d.hrv) : '--';
+    if (gsrEl) gsrEl.textContent = (d.gsr != null && !isNaN(d.gsr)) ? Math.round(d.gsr) : '--';
+    if (motEl) motEl.textContent = (d.motion != null && !isNaN(d.motion)) ? Math.round(d.motion) : '--';
 
     // 采基线阶段：累积样本供结算 μ/σ（连接后 ~5s 的 baseline 状态期）
     if (!monitoring) {
@@ -229,6 +248,14 @@
 
     const { z, level } = stressIndex(d);
     updateRing(d.hr, level);
+
+    // 记一条压力指数时间序列点（节流 ~30s），供 24h 折线图使用
+    const nowT = Date.now();
+    if (nowT - lastTrendTs > 30000) {
+      lastTrendTs = nowT;
+      Store.addTrendSample({ z: Math.round(z * 100) / 100, level });
+      renderTrend();
+    }
 
     // ── 三档干预触觉：按 z 分级递进（1σ/2σ/3σ，见 docs/科学依据.md）──
     const now = Date.now();
@@ -283,6 +310,8 @@
     Store.incRingHug();
     refreshTimeline();
     refreshHug();
+    Store.addTrendSample({ z: stressIndex(d).z, level: 'high' });
+    renderTrend();
     toast(mode === 'retreat' ? '🫂 戒指：你可以停下来了' : '🌬️ 戒指陪你呼吸（吸4·呼6）');
   }
 
@@ -302,6 +331,8 @@
     Store.incRingHug();
     refreshTimeline();
     refreshHug();
+    Store.addTrendSample({ z: stressIndex(d).z, level: 'mid' });
+    renderTrend();
     toast('· 戒指轻轻碰了碰你');
   }
 
@@ -317,6 +348,75 @@
     if (hug) hug.textContent = g.ringHugCount || 0;
   }
 
+  // ── 24h 情绪起伏折线图（类股票K线的情绪版）──
+  // 中间是"平静地带"(z≈0)；线在上=压力↑ 用红、越高越饱和；线在下=越平静 用绿、越低越淡。
+  function renderTrend() {
+    const box = el && el.querySelector('#rtTrend');
+    if (!box) return;
+
+    const W = 360, H = 120, PAD = 10;
+    const midY = H / 2, half = midY - PAD, Z_MAX = 3;
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const t0 = dayStart.getTime(), DAY = 24 * 3600e3, now = Date.now();
+
+    const yOf = z => midY - (Math.max(-Z_MAX, Math.min(Z_MAX, z)) / Z_MAX) * half;
+    const xOf = ts => Math.max(0, Math.min(1, (ts - t0) / DAY)) * W;
+
+    const samples = Store.getTrend(0).filter(s => s.ts >= t0).sort((a, b) => a.ts - b.ts);
+    const nowX = xOf(now);
+
+    // 竖向渐变：顶部饱和红 → 中间平静(近透明) → 底部饱和绿
+    const defs = `
+      <defs>
+        <linearGradient id="rtTrendGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stop-color="#C75C4B" stop-opacity="0.92"/>
+          <stop offset="34%" stop-color="#E0A99C" stop-opacity="0.55"/>
+          <stop offset="48%" stop-color="#D4B8A5" stop-opacity="0.12"/>
+          <stop offset="52%" stop-color="#B7CDBE" stop-opacity="0.12"/>
+          <stop offset="66%" stop-color="#B7CDBE" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#6E9E82" stop-opacity="0.92"/>
+        </linearGradient>
+      </defs>`;
+
+    // 平静地带：z∈[-1,1]（1σ 内）横向浅带
+    const bandTop = yOf(1), bandBot = yOf(-1);
+    const band = `<rect x="0" y="${bandTop.toFixed(1)}" width="${W}" height="${(bandBot - bandTop).toFixed(1)}"
+        fill="var(--accent)" opacity="0.08"/>
+      <line x1="0" y1="${midY}" x2="${W}" y2="${midY}" stroke="var(--sub)" stroke-width="1" stroke-dasharray="3 4" opacity="0.35"/>`;
+
+    let content;
+    if (samples.length < 2) {
+      // 无数据：画一条平静基线到当前时刻
+      content = `<line x1="0" y1="${midY}" x2="${nowX.toFixed(1)}" y2="${midY}"
+          stroke="#B7CDBE" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="${nowX.toFixed(1)}" cy="${midY}" r="3.5" fill="#8FB39C"/>`;
+    } else {
+      const pts = samples.map(s => [xOf(s.ts), yOf(s.z)]);
+      const lineD = 'M ' + pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L ');
+      // 面积：沿折线走，再回到中线闭合 → 上方部分落在渐变红区、下方落在绿区
+      const first = pts[0], last = pts[pts.length - 1];
+      const areaD = `M ${first[0].toFixed(1)},${midY} L ` +
+        pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L ') +
+        ` L ${last[0].toFixed(1)},${midY} Z`;
+      content = `<path d="${areaD}" fill="url(#rtTrendGrad)"/>
+        <path d="${lineD}" fill="none" stroke="var(--ink)" stroke-width="1.6"
+          stroke-linejoin="round" stroke-linecap="round" opacity="0.55"/>
+        <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.5"
+          fill="${last[1] < midY ? '#C75C4B' : '#6E9E82'}"/>`;
+    }
+
+    // 时间刻度 0/6/12/18/24
+    const ticks = [0, 6, 12, 18, 24].map(h => {
+      const x = (h / 24) * W;
+      return `<text x="${Math.max(6, Math.min(W - 6, x)).toFixed(0)}" y="${H - 1}"
+        font-size="8" fill="var(--sub)" text-anchor="${h === 0 ? 'start' : h === 24 ? 'end' : 'middle'}">${h}:00</text>`;
+    }).join('');
+
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="rt-trend-svg" preserveAspectRatio="none">
+      ${defs}${band}${content}${ticks}
+    </svg>`;
+  }
+
   function refreshTimeline() {
     const box = el && el.querySelector('#rtTimeline');
     if (!box) return;
@@ -325,16 +425,28 @@
       box.innerHTML = `<div class="rt-empty muted">今天还没有记录，戴上戒指开始感受吧</div>`;
       return;
     }
-    box.innerHTML = list.slice(0, 20).map(e => {
+    const COLLAPSED = 5;
+    const shown = timelineExpanded ? list : list.slice(0, COLLAPSED);
+    const rows = shown.map(e => {
       const t = new Date(e.ts).toTimeString().slice(0, 5);
       const info = LEVELS[e.level] || LEVELS.low;
-      const icon = e.type === 'stress' ? '🤍' : '·';
       return `<div class="rt-tl-row">
         <span class="rt-tl-time muted">${t}</span>
         <span class="rt-tl-dot" style="background:${info.color}"></span>
         <span class="rt-tl-text">${e.note || (info.label + ' 时刻')}</span>
       </div>`;
     }).join('');
+
+    let toggle = '';
+    if (list.length > COLLAPSED) {
+      toggle = timelineExpanded
+        ? `<button class="rt-tl-more" id="rtTlToggle">收起 ▲</button>`
+        : `<button class="rt-tl-more" id="rtTlToggle">展开全部 ${list.length} 条 ▼</button>`;
+    }
+    box.innerHTML = rows + toggle;
+
+    const btn = box.querySelector('#rtTlToggle');
+    if (btn) btn.onclick = () => { timelineExpanded = !timelineExpanded; refreshTimeline(); };
   }
 
   let toastTimer;
@@ -351,35 +463,47 @@
     const s = document.createElement('style');
     s.id = 'rt-style';
     s.textContent = `
-      .rt-wrap{display:flex;flex-direction:column;gap:var(--gap);}
-      .rt-status{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);justify-content:center;}
-      .rt-status .dot{width:8px;height:8px;border-radius:50%;background:var(--sub);}
+      .rt-wrap{display:flex;flex-direction:column;gap:11px;}
+      .rt-status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);justify-content:center;}
+      .rt-status .dot{width:7px;height:7px;border-radius:50%;background:var(--sub);}
       .rt-status .dot.monitoring{background:var(--calm);}
       .rt-status .dot.baseline,.rt-status .dot.connecting{background:var(--mid);}
       .rt-status .dot.disconnected,.rt-status .dot.unsupported{background:var(--high);}
-      .rt-ring{position:relative;display:flex;align-items:center;justify-content:center;padding:18px;}
+      .rt-ring{position:relative;display:flex;align-items:center;justify-content:center;padding:6px;box-shadow:none;background:transparent;}
       .rt-ring.pulse{animation:rtPulse .8s ease;}
       @keyframes rtPulse{0%{transform:scale(1)}30%{transform:scale(1.03)}100%{transform:scale(1)}}
-      .rt-svg{width:240px;height:240px;}
+      .rt-svg{width:172px;height:172px;animation:breathe 8s var(--ease-calm) infinite;}
       .rt-center{position:absolute;text-align:center;}
-      .rt-hr{font-size:56px;font-weight:700;line-height:1;color:var(--ink);}
-      .rt-unit{font-size:13px;color:var(--sub);margin-top:2px;letter-spacing:1px;}
-      .rt-level{margin-top:10px;font-size:14px;font-weight:600;}
-      .rt-meta{display:flex;gap:var(--gap);}
-      .rt-meta-item{flex:1;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;text-align:center;}
-      .rt-meta-item .v{font-size:24px;font-weight:700;}
-      .rt-meta-item .k{font-size:12px;color:var(--sub);margin-top:2px;}
-      .rt-actions{display:flex;gap:12px;}
-      .rt-actions button{flex:1;}
-      .rt-haptics{padding:16px;}
-      .rt-haptic-btns{display:flex;gap:8px;margin-top:12px;}
-      .rt-haptic-btns button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;font-size:13px;font-weight:600;line-height:1.2;}
-      .rt-haptic-btns button small{font-size:10px;font-weight:400;color:var(--sub);}
-      .rt-tl-title{font-weight:600;margin-bottom:12px;}
+      .rt-hr{font-size:44px;font-weight:700;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;}
+      .rt-unit{font-size:11px;color:var(--sub);margin-top:3px;letter-spacing:.5px;}
+      .rt-level{margin-top:7px;font-size:13px;font-weight:600;}
+      .rt-meta{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+      .rt-meta-item{background:var(--surface);border-radius:var(--radius-sm);box-shadow:var(--shadow-soft);padding:9px 10px;text-align:center;}
+      .rt-meta-item .v{font-size:19px;font-weight:700;line-height:1.1;}
+      .rt-meta-item .k{font-size:11px;color:var(--sub);margin-top:1px;}
+      .rt-meta-item .d{font-size:9px;color:var(--sub);opacity:.72;margin-top:2px;line-height:1.25;}
+      .rt-actions{display:flex;gap:10px;}
+      .rt-actions button{flex:1;padding:11px 16px;font-size:14px;}
+      .rt-haptics{padding:12px 14px;}
+      .rt-haptic-btns{display:flex;gap:8px;margin-top:9px;}
+      .rt-haptic-btns button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;font-size:12px;font-weight:600;line-height:1.2;}
+      .rt-haptic-btns button small{font-size:9px;font-weight:400;color:var(--sub);}
+      .rt-tl-title{font-weight:600;font-size:14px;margin-bottom:9px;}
+      .rt-trend{padding:12px 14px;}
+      .rt-trend-svg{width:100%;height:96px;display:block;}
+      .rt-trend-legend{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;color:var(--sub);}
+      .rt-trend-legend span{display:flex;align-items:center;gap:5px;}
+      .rt-trend-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+      .rt-trend-legend i.hi{background:#C75C4B;}
+      .rt-trend-legend i.calm-band{background:var(--accent);opacity:.35;}
+      .rt-trend-legend i.lo{background:#6E9E82;}
       .rt-tl-row{display:flex;align-items:center;gap:10px;padding:7px 0;}
       .rt-tl-time{font-size:12px;width:38px;flex:none;}
       .rt-tl-dot{width:8px;height:8px;border-radius:50%;flex:none;}
       .rt-tl-text{font-size:14px;}
+      .rt-tl-more{width:100%;margin-top:8px;padding:8px;background:transparent;border:none;
+        color:var(--sub);font-size:13px;cursor:pointer;border-top:1px solid var(--line);}
+      .rt-tl-more:active{opacity:.6;}
       .rt-empty{text-align:center;padding:16px;font-size:13px;}
       #rtToast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(20px);
         background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;
