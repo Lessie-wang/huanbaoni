@@ -361,11 +361,18 @@
   function renderGranularity() {
     const box = $('#grGranularity');
     if (!box) return;
-    const events = Store.getEvents();
 
-    // 统计每种情绪被主观选用的次数
+    // 统计每种情绪被"主观命名"的次数。
+    // 主观命名有两个来源，都算数（见 docs：情感粒度=用户为感受命名的能力）：
+    //   1) events.mood —— 手动补录/未来任何带 mood 的事件
+    //   2) portraits.emoNames —— 心灵画像页手选的情绪（同为 16 主类 name，同命名空间）
+    // 环抱页/小知页的压力事件只有 level、无 mood，是"体感真相"而非"主观命名"，故不计入。
+    // 只统计"合法的 16 主类"名字，其它一律忽略（先按主类上线；将来接 sub 词再放开）
+    const valid = new Set(window.Emotions.map(e => e.name));
     const count = {};
-    events.forEach(e => { if (e.mood) count[e.mood] = (count[e.mood] || 0) + 1; });
+    const tally = n => { if (valid.has(n)) count[n] = (count[n] || 0) + 1; };
+    Store.getEvents().forEach(e => { if (e.mood) tally(e.mood); });
+    Store.getPortraits().forEach(p => (p.emoNames || []).forEach(tally));
     const used = Object.keys(count);
     const total = window.Emotions.length;
 

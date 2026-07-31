@@ -40,10 +40,16 @@
       .screen{ padding-top:0; }
     }
 
-    #app { margin: 0 auto; min-height: 100%; padding: 12px 16px 96px; }
+    #app { margin: 0 auto; min-height: 100%; padding: 6px 15px 96px; } /* 底部留白需盖过凸起的环抱 FAB(tabbar64+上探24) */
+
+    /* 固定单屏页（如心灵画像）：不滚动，内容按可用高度自适应 */
+    .screen.no-scroll{ overflow:hidden; }
+    /* 底部多留出凸起主按钮的高度，避免内容被环抱按钮挡住 */
+    #app.fixed-page{ height:100%; display:flex; flex-direction:column; padding-bottom:92px; }
+    #app.fixed-page #view{ flex:1; min-height:0; display:flex; flex-direction:column; }
 
     /* ── 顶栏 ── */
-    .topbar { display:flex; align-items:center; gap:11px; padding: 8px 2px 16px; }
+    .topbar { display:flex; align-items:center; gap:10px; padding: 4px 2px 10px; }
     .topbar .mark { width:40px; height:36px; display:block; flex:none; }
     .topbar .brand { display:flex; flex-direction:column; line-height:1.15; }
     .topbar .brand .mother { font-size:11px; color:var(--sub); letter-spacing:3px; font-weight:500; }
@@ -100,32 +106,9 @@
     #xiaozhiFab .breathe-dot { position:absolute; top:6px; right:7px; width:7px; height:7px;
       border-radius:50%; background:var(--calm); animation:haloPulse 4s var(--ease-calm) infinite; }
 
-    /* ── 小知对话 overlay ── */
-    #chatOverlay {
-      position:absolute; inset:0; z-index:60; display:none;
-      background:rgba(58,53,47,.28); backdrop-filter:blur(3px);
-    }
-    #chatOverlay.open { display:block; }
-    #chatSheet {
-      position:absolute; left:0; bottom:0; transform:translateY(100%);
-      width:100%; height:92%;
-      background:var(--bg); border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-      box-shadow:0 -12px 40px rgba(58,53,47,.18);
-      transition:transform .34s var(--ease-calm); overflow:hidden;
-      display:flex; flex-direction:column;
-    }
-    #chatOverlay.open #chatSheet { transform:translateY(0); }
-    #chatSheet .sheet-head {
-      display:flex; align-items:center; gap:10px; padding:14px 18px 10px; flex:none;
-      border-bottom:1px solid var(--line);
-    }
-    #chatSheet .sheet-head .grip { position:absolute; top:7px; left:50%; transform:translateX(-50%);
-      width:38px; height:4px; border-radius:2px; background:var(--line); }
-    #chatSheet .sheet-head .zname { font-family:var(--font-serif); font-size:17px; font-weight:600; letter-spacing:1px; }
-    #chatSheet .sheet-head .zsub { font-size:11px; color:var(--sub); }
-    #chatSheet .sheet-head .xclose { margin-left:auto; background:transparent; color:var(--sub); padding:6px; display:flex; }
-    #chatSheet .sheet-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-    #chatSheet .sheet-body .chat-wrap { height:auto !important; min-height:100%; }
+    /* ── 小知整页沉浸对话 ── */
+    #app.immersive-page { height:100%; padding:0; display:flex; flex-direction:column; }
+    #app.immersive-page #view { flex:1; min-height:0; display:flex; flex-direction:column; }
 
     .placeholder { text-align:center; color:var(--sub); padding:60px 20px; }
     .placeholder .em { font-size:40px; }
@@ -201,7 +184,7 @@
     </div><!-- /.screen -->
 
   <!-- 小知浮窗（仅环抱主页显示） -->
-  <button id="xiaozhiFab" onclick="openChat()" aria-label="和小知聊聊">
+  <button id="xiaozhiFab" onclick="location.hash='chat'" aria-label="和小知聊聊">
     <span class="breathe-dot"></span>
     <svg viewBox="0 0 24 24" stroke="var(--accent-deep)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-xiaozhi"/></svg>
     <span class="tip">和小知聊聊</span>
@@ -209,24 +192,6 @@
 
   <!-- 底部导航 -->
   <nav class="tabbar" id="tabbar"></nav>
-
-  <!-- 小知对话 overlay -->
-  <div id="chatOverlay" onclick="if(event.target===this)closeChat()">
-    <div id="chatSheet">
-      <div class="sheet-head">
-        <span class="grip"></span>
-        <svg width="30" height="30" viewBox="0 0 24 24" stroke="var(--accent-deep)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-xiaozhi"/></svg>
-        <div>
-          <div class="zname">小知</div>
-          <div class="zsub">带证据的当天证人 · 我在</div>
-        </div>
-        <button class="xclose" onclick="closeChat()" aria-label="收起">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-        </button>
-      </div>
-      <div class="sheet-body" id="chatBody"></div>
-    </div>
-  </div>
   </div><!-- /.device -->
 
   <dialog class="settings" id="settingsDlg">
@@ -249,6 +214,7 @@
   <script src="lib/ai.js"></script>
   <script src="lib/emotions.js"></script>
   <script src="lib/audiostore.js"></script>
+  <script src="lib/tts.js"></script>
   <script src="lib/imagestore.js"></script>
   <script src="lib/mock.js"></script>
   <script src="lib/ble.js"></script>
@@ -288,6 +254,10 @@
     const tabbar = document.getElementById('tabbar');
     const view = document.getElementById('view');
     const xiaozhiFab = document.getElementById('xiaozhiFab');
+    const appEl = document.getElementById('app');
+    const screenEl = document.querySelector('.screen');
+    // 固定单屏、不滚动的页面
+    const FIXED_PAGES = ['portrait'];
 
     function svgIcon(id){ return `<svg viewBox="0 0 24 24"><use href="#${id}"/></svg>`; }
 
@@ -310,11 +280,19 @@
 
     function route() {
       const key = (location.hash.replace('#','') || 'realtime');
-      // 若旧链接指向 chat，重定向为环抱 + 打开浮窗对话
-      if (key === 'chat') { location.hash = 'realtime'; setTimeout(openChat, 60); return; }
+      // 小知：整页沉浸对话（隐藏顶栏/底栏，带返回）
+      const immersive = (key === 'chat');
+      document.querySelector('.topbar').style.display = immersive ? 'none' : '';
+      tabbar.style.display = immersive ? 'none' : '';
+      appEl.classList.toggle('immersive-page', immersive);
+
       renderTabs(key);
       // 小知浮窗只在环抱主页出现
       xiaozhiFab.style.display = (key === 'realtime') ? 'flex' : 'none';
+      // 固定单屏页：整页不滚动，内容自适应可用高度
+      const fixed = FIXED_PAGES.includes(key);
+      screenEl.classList.toggle('no-scroll', fixed || immersive);
+      appEl.classList.toggle('fixed-page', fixed);
       view.innerHTML = '';
       const page = window.Pages[key];
       if (page && typeof page.render === 'function') {
@@ -329,24 +307,50 @@
     window.addEventListener('DOMContentLoaded', route);
     route();
 
-    // ---- 小知对话 overlay ----
-    const chatOverlay = document.getElementById('chatOverlay');
-    const chatBody = document.getElementById('chatBody');
-    let chatRendered = false;
-    function openChat() {
-      if (!chatRendered && window.Pages.chat && typeof window.Pages.chat.render === 'function') {
-        try { window.Pages.chat.render(chatBody); chatRendered = true; }
-        catch (e) { chatBody.innerHTML = `<div class="placeholder"><div class="em">⚠️</div>小知加载出错：${e.message}</div>`; }
-      }
-      chatOverlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-    function closeChat() {
-      chatOverlay.classList.remove('open');
-      document.body.style.overflow = '';
-    }
+    // ---- 小知：整页对话（从浮窗进入，返回回环抱）----
+    function openChat() { location.hash = 'chat'; }
+    function closeChat() { location.hash = 'realtime'; }
     window.openChat = openChat;
     window.closeChat = closeChat;
+
+    // ---- 敲戒指 → 任意页面直接唤起小知并开录（全局只挂一次）----
+    // 已在小知页时：交给 chat.js 自己 toggle（那边同样有去抖），这里不管。
+    // 不在小知页时：写入自动开录标记 → 跳转 #chat，chat.js 落地后消费标记自动开录。
+    let _navGestureAt = 0;
+    window.addEventListener('ring:gesture', (e) => {
+      const s = ((e.detail && e.detail.gesture) || '').toUpperCase();
+      if (s.indexOf('TAP') < 0) return;
+      const key = (location.hash.replace('#', '') || 'realtime');
+      if (key === 'chat') return; // 已在小知页 → chat.js 负责
+      const now = Date.now();
+      if (now - _navGestureAt < 800) return; // 去抖，避免连击重复跳转
+      _navGestureAt = now;
+      try { sessionStorage.setItem('hbn.ring.autorecord', '1'); } catch (_) {}
+      location.hash = 'chat';
+    });
+
+    // ---- 无真戒指时的「模拟敲两下」：双击屏幕 / 双指点击 → 派发 ring:gesture(DBLTAP) ----
+    // 现场用手机演示「敲戒指唤起小知」的亮点，不接硬件也能跑；真戒指到位后此路径不影响它。
+    // 忽略输入框/按钮/链接上的双击，避免误触打断正常操作。
+    (function wireTapSimulation() {
+      const IGNORE = /^(BUTTON|A|INPUT|TEXTAREA|SELECT|LABEL)$/;
+      const fire = () => window.dispatchEvent(
+        new CustomEvent('ring:gesture', { detail: { gesture: 'DBLTAP', source: 'sim' } })
+      );
+      const fromUI = (t) => {
+        while (t && t !== document.body) {
+          if (t.nodeType === 1 && (IGNORE.test(t.tagName) || t.isContentEditable)) return true;
+          t = t.parentNode;
+        }
+        return false;
+      };
+      // 桌面/手机通用：原生 dblclick（浏览器已按系统阈值判定「快速两下」）
+      document.addEventListener('dblclick', (e) => { if (!fromUI(e.target)) fire(); });
+      // 手机双指点击（two-finger tap）：一次 touchstart 出现两个触点即视为「敲戒指」
+      document.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 2 && !fromUI(e.target)) fire();
+      }, { passive: true });
+    })();
 
     // ---- 设置弹窗 ----
     const settingsDlg = document.getElementById('settingsDlg');

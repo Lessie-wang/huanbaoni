@@ -130,9 +130,9 @@
     }
 
     // 三档干预触觉（见 docs/接口契约.md §1）
-    //   intercept → 档三·早期拦截（单次轻促短震）
+    //   intercept → 档一·早期拦截（单次轻促短震）
     //   anchor    → 档二·实时锚点（共振呼吸 吸4·呼6，渐强渐弱 x3）
-    //   retreat   → 档一·撤退许可（两下长震）
+    //   retreat   → 档三·撤退许可（两下长震）
     async vibrate(mode = 'anchor') {
       if (!this._cmdCh) { console.warn('[BleRing] 无 CMD 通道，无法震动'); return; }
       const CMD = {

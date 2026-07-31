@@ -16,12 +16,27 @@
   let activeVoiceToggle = null;
   let _gestureWired = false;
   let _lastGestureAt = 0;
+
+  // 离开小知页时让语音立刻停（切 tab / 返回都会 hashchange）——只挂一次
+  let _leaveWired = false;
+  function wireLeaveOnce() {
+    if (_leaveWired) return;
+    _leaveWired = true;
+    global.addEventListener('hashchange', () => {
+      const key = (location.hash.replace('#', '') || 'realtime');
+      if (key !== 'chat' && global.TTS) { try { global.TTS.stop(); } catch (_) {} }
+    });
+  }
   function wireGestureOnce() {
     if (_gestureWired) return;
     _gestureWired = true;
     global.addEventListener('ring:gesture', (e) => {
       const s = ((e.detail && e.detail.gesture) || '').toUpperCase();
       if (s.indexOf('TAP') < 0) return;
+      // 只在「已经在小知页」时由这里 toggle 当前录音器；
+      // 不在小知页时的「敲戒指→跳转唤起」由 index.html 的全局路由负责，避免双触发。
+      const key = (location.hash.replace('#', '') || 'realtime');
+      if (key !== 'chat') return;
       const now = Date.now();
       if (now - _lastGestureAt < 800) return;
       _lastGestureAt = now;
@@ -30,36 +45,37 @@
   }
 
   // ---------- 本地 mock 回复（无 API Key 时兜底，保证演示可跑） ----------
+  // 兜底话术（无 API Key 时用）：温柔文雅·引导型，双音节动词，收尾落在开放邀请上。
   function mockOpening(events) {
     const high = (events || []).find(e => e.level === 'high') || (events || [])[0];
     if (!high) {
-      return '嗨，我在。今天你的身体挺平稳的，没有特别绷紧的时刻——这本身就很好。想聊点什么都可以，不想说也没关系，我陪着你。';
+      return '今天的你，身体一直很平稳，没有明显绷紧的时刻。如果此刻心里有什么想停留一会儿的，我都在。';
     }
     const t = new Date(high.ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
     if (high.mood) {
-      return `我在。${t} 那会儿，你的身体其实绷得挺紧的，你当时记下的是"${high.mood}"。要不要跟我说说那一刻发生了什么？`;
+      return `${t} 那会儿，你的身体悄悄绷紧了一下，你当时留意到的是"${high.mood}"。如果愿意，能和我说说那一刻，发生了什么吗？`;
     }
-    return `我在。${t} 那会儿，你的身体悄悄绷紧了一下——你当时可能都没太留意。发生什么了吗？说不说都行，我只是想让你知道，我看见了。`;
+    return `${t} 那会儿，你的身体其实绷紧了一下，你可能都没来得及留意。不必急着回答——如果愿意，能和我说说那时候，你正在忙着什么吗？`;
   }
 
   function mockReply(userText) {
     const t = (userText || '').trim();
-    if (!t) return '嗯，我在听。';
+    if (!t) return '我在听着，你慢慢说。';
     // 无 API Key 时也能演示知识库：命中就用知识卡的话术直接接地气讲一段
     if (global.KB) {
       const hit = global.KB.retrieve(t, 1)[0];
       if (hit) return hit.oneLine + '\n\n' + hit.plain;
     }
     if (/没事|还好|没什么|不知道/.test(t)) {
-      return '嗯……你说没事，但你的身体那一刻其实很用力。有时候我们太习惯说"还好"了。不用急着说清楚，我先陪你待一会儿。';
+      return '你说"还好"，可你说这两个字的时候，好像有点用力。如果愿意，能多和我说一点吗？';
     }
     if (/累|疲惫|撑|硬撑/.test(t)) {
-      return '听起来你扛了很久了。累，是身体在替你说"该歇歇了"。这不是矫情，是真的。';
+      return '这份累，你已经扛了有一阵子了吧。能和我说说，是从什么时候开始变沉的吗？';
     }
     if (t.length < 8) {
-      return '嗯，我听到了。可以多说一点吗，哪怕只是一个词也好。';
+      return '我留意到了。能顺着这个，再往下多讲一点吗？';
     }
-    return '谢谢你愿意跟我说这些。我在这儿，慢慢来，我们一点点看清它。';
+    return '你说的这些，我都收到了。如果愿意，我们可以从最让你在意的那一处，慢慢往下看。';
   }
 
   // ---------- 渲染 ----------
@@ -68,10 +84,22 @@
   function ensureDemoEvidence() {
     const today = Store.getEventsByDate();
     if (today.length) return today;
+    // 证据时间取"今天早些时候的一个随机时刻"，避免每次开场都固定在 14:32，也不会落到未来
     const now = new Date();
-    now.setHours(14, 32, 0, 0);
+    const evt = new Date(now);
+    const minMs = 30 * 60e3;                 // 至少 30 分钟前
+    const sinceMidnight = now - new Date(now).setHours(0, 0, 0, 0);
+    if (sinceMidnight <= minMs) {
+      evt.setTime(now.getTime() - minMs);    // 一大早就进来：就取半小时前
+    } else {
+      // 在「今天0点+30分」到「此刻30分钟前」之间随机取一个整分钟
+      const span = (now.getTime() - minMs) - (new Date(now).setHours(0, 0, 0, 0) + minMs);
+      const back = minMs + Math.floor(Math.random() * Math.max(span, 0));
+      evt.setTime(now.getTime() - back);
+      evt.setSeconds(0, 0);
+    }
     Store.addEvent({
-      ts: now.getTime(), type: 'stress', level: 'high',
+      ts: evt.getTime(), type: 'stress', level: 'high',
       hr: 108, hrv: 19, source: 'ring',   // 身体明显绷紧，但用户没有主观标注 mood → 触发"体感真相"落差
     });
     return Store.getEventsByDate();
@@ -86,22 +114,38 @@
 
     el.innerHTML = `
       <style>
-        .chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 160px);}
-        .chat-hd{display:flex;align-items:center;gap:10px;padding:4px 2px 12px;}
-        .chat-hd .ava{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none;
+        .chat-wrap{display:flex;flex-direction:column;height:100%;min-height:0;}
+        /* 沉浸对话顶栏：返回 + 头像 + 名字状态 */
+        .chat-hd{display:flex;align-items:center;gap:10px;padding:12px 16px;flex:none;
+          border-bottom:1px solid var(--line);background:rgba(255,255,255,.72);backdrop-filter:blur(12px);}
+        .chat-hd .back{background:transparent;color:var(--ink);padding:6px;margin:-6px 2px -6px -6px;display:flex;flex:none;}
+        .chat-hd .ava{width:38px;height:38px;border-radius:50%;object-fit:cover;flex:none;
           box-shadow:0 2px 8px rgba(0,0,0,.08);}
-        .chat-hd .nm{font-weight:600;font-size:16px;}
+        .chat-hd .nm{font-family:var(--font-serif);font-weight:600;font-size:17px;letter-spacing:1px;}
         .chat-hd .st{font-size:12px;color:var(--sub);}
-        .chat-log{flex:1;overflow-y:auto;padding:6px 2px;display:flex;flex-direction:column;gap:12px;}
+        /* 语音开关：小知开口说话的总开关（默认开，localStorage 记忆）*/
+        .chat-hd .voi{margin-left:auto;flex:none;display:flex;align-items:center;gap:5px;
+          font-size:12px;color:var(--sub);background:var(--surface);border:1px solid var(--line);
+          border-radius:20px;padding:6px 11px;cursor:pointer;transition:all .15s ease;}
+        .chat-hd .voi.on{color:#fff;background:var(--accent);border-color:var(--accent);}
+        .chat-hd .voi svg{width:15px;height:15px;flex:none;}
+        /* 小知气泡正在朗读时的轻微"说话中"呼吸动效 */
+        .msg.zhi.speaking{animation:zhiSpeak 1.3s ease-in-out infinite;}
+        @keyframes zhiSpeak{0%,100%{box-shadow:0 0 0 0 rgba(212,184,165,0)}
+          50%{box-shadow:0 0 0 4px rgba(212,184,165,.30)}}
+        .chat-log{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
         .msg{max-width:86%;padding:10px 13px;border-radius:16px;font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
         /* 纯语音气泡：宽度跟着语音条走，不被强行撑肥 */
         .msg.voice-only{max-width:100%;width:fit-content;padding:8px;}
         .msg.zhi{align-self:flex-start;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-bottom-left-radius:5px;}
         .msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:5px;}
         .msg.typing{color:var(--sub);font-style:italic;}
-        .chat-in{display:flex;gap:8px;padding:10px 0 2px;align-items:flex-end;}
+        .rec-bar{margin:4px 16px;}
+        .chat-in{display:flex;gap:8px;padding:10px 16px 2px;align-items:flex-end;}
         .chat-in textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;
-          padding:10px 12px;font-size:15px;font-family:var(--font);max-height:96px;background:var(--surface);color:var(--ink);}
+          padding:10px 12px;font-size:15px;font-family:var(--font);max-height:96px;background:var(--surface);color:var(--ink);
+          outline:none;transition:border-color .2s var(--ease-calm);}
+        .chat-in textarea:focus{border-color:var(--accent);}
         .chat-in button{flex:none;padding:10px 16px;}
         .chat-mic{width:44px;height:44px;padding:0!important;border-radius:50%;
           display:flex;align-items:center;justify-content:center;
@@ -151,15 +195,22 @@
         .msg.md .md-table{border-collapse:collapse;width:100%;margin:8px 0;font-size:13.5px;}
         .msg.md .md-table th,.msg.md .md-table td{border:1px solid var(--line);padding:6px 9px;text-align:left;}
         .msg.md .md-table th{background:rgba(0,0,0,.04);font-weight:600;}
-        .chat-tip{font-size:11px;color:var(--sub);text-align:center;padding:2px 0 6px;}
+        .chat-tip{font-size:11px;color:var(--sub);text-align:center;padding:2px 16px calc(14px + env(safe-area-inset-bottom,0));}
       </style>
       <div class="chat-wrap">
         <div class="chat-hd">
+          <button class="back" onclick="location.hash='realtime'" aria-label="返回">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
           <img class="ava" src="assets/xiaozhi-avatar.jpg" alt="小知" />
           <div>
             <div class="nm">小知</div>
-            <div class="st">${online ? '在线 · 带着今天的证据来陪你' : 'mock 模式 · 在设置里填 Key 可接真 AI'}</div>
+            <div class="st">${online ? '在线 · 陪你说说今天' : 'mock 模式 · 在设置里填 Key 可接真 AI'}</div>
           </div>
+          <button class="voi" id="voiToggle" title="小知语音回复开关" aria-label="语音回复开关">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"></path><path class="voi-wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"></path></svg>
+            <span class="voi-lb">语音</span>
+          </button>
         </div>
         <div class="chat-log" id="chatLog"></div>
         <div class="rec-bar" id="recBar">
@@ -175,7 +226,7 @@
               <line x1="12" y1="18" x2="12" y2="21"></line>
             </svg>
           </button>
-          <textarea id="chatInput" rows="1" placeholder="想说点什么…不想说也没关系"></textarea>
+          <textarea id="chatInput" rows="1" placeholder="和小知说说此刻的心情…"></textarea>
           <button id="chatSend">发送</button>
         </div>
         <div class="chat-tip">敲两下戒指即可开口对小知说话 · 录音只存在你本机，不上传 · 危机可拨 400-161-9995</div>
@@ -353,6 +404,48 @@
       input.style.height = Math.min(input.scrollHeight, 96) + 'px';
     });
 
+    // ---- 小知开口说话：把回复念出来，气泡加"说话中"动效 ----
+    // TTS 走 Qwen3 realtime（aiden 音色 1.1×），失败自动降级浏览器语音，见 lib/tts.js。
+    const TTS = global.TTS;
+    function speakZhi(text, bubbleEl) {
+      if (!TTS || !TTS.isEnabled()) return;
+      // 朗读时移除 Markdown 记号，念起来才干净（去掉 #/*/`/链接等）
+      const speakText = (text || '')
+        .replace(/```[\s\S]*?```/g, '')          // 代码块不念
+        .replace(/`([^`]*)`/g, '$1')
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, '')     // 图片
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')  // 链接留文字
+        .replace(/[#>*_~|-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!speakText) return;
+      TTS.speak(speakText, {
+        onStart: () => { if (bubbleEl) bubbleEl.classList.add('speaking'); },
+        onEnd:   () => { if (bubbleEl) bubbleEl.classList.remove('speaking'); },
+        onError: (e) => {
+          if (bubbleEl) bubbleEl.classList.remove('speaking');
+          // 把失败原因显出来，别再静默——方便定位"没声"是权限还是连接还是播放被挡
+          console.warn('[TTS] speak failed:', e);
+          toastChat('语音没出声：' + (e && e.message ? e.message : e));
+        },
+      });
+    }
+
+    // ---- 顶部语音开关（默认开，localStorage 记忆）----
+    const voiToggle = el.querySelector('#voiToggle');
+    function syncVoiBtn() {
+      const on = TTS ? TTS.isEnabled() : false;
+      voiToggle.classList.toggle('on', on);
+      const lb = voiToggle.querySelector('.voi-lb');
+      if (lb) lb.textContent = on ? '语音' : '静音';
+      voiToggle.title = on ? '小知语音回复：开（点击静音）' : '小知语音回复：关（点击开启）';
+    }
+    if (!TTS) { voiToggle.style.display = 'none'; }
+    else {
+      syncVoiBtn();
+      voiToggle.onclick = () => { TTS.toggle(); if (!TTS.isEnabled()) TTS.stop(); syncVoiBtn(); };
+    }
+
     // ---- 小知主动开场（带证据敲门） ----
     async function opening() {
       const tip = typing();
@@ -369,8 +462,12 @@
         text = mockOpening(events);
       }
       tip.remove();
-      bubble('zhi', text);
+      const b = bubble('zhi', text);
       history.push({ role: 'assistant', content: text });
+      // 开场白是"进页面自动出现"，此刻用户还没手势 → 直接念会被浏览器自动播放策略掐掉
+      // （报 "AudioContext was not allowed to start"）。等首次交互解锁后再念。
+      if (TTS && TTS.whenReady) TTS.whenReady(() => speakZhi(text, b));
+      else speakZhi(text, b);
     }
 
     // ---- 用户发送（文字或语音转写共用）----
@@ -397,8 +494,9 @@
         text = mockReply(userText);
       }
       tip.remove();
-      bubble('zhi', text);
+      const b = bubble('zhi', text);
       history.push({ role: 'assistant', content: text });
+      speakZhi(text, b);
     }
 
     function send() {
@@ -435,14 +533,36 @@
       capTimer: null,
       lastErr: '',        // 诊断：记录最近一次 SpeechRecognition 错误码
       resultCount: 0,     // 诊断：收到过多少次 onresult
+      // —— 自动重启熔断（关键：连不到识别后端时，若无限重启会打满主线程、整页卡死）——
+      recogFails: 0,      // 连续"秒退"失败计数
+      recogDead: false,   // 熔断后不再重启识别，仅保留录音
+      recogStartAt: 0,    // 本段 session 的启动时刻，用于判定"是否秒退"
+      restartTimer: null, // 节流重启的定时器句柄
 
       async start() {
         if (this.recording) return;
+        // live 同频：用户一开口，小知立刻噤声开始听（打断正在念的语音）
+        if (global.TTS) { try { global.TTS.stop(); } catch (_) {} }
+        el.querySelectorAll('.msg.zhi.speaking').forEach(m => m.classList.remove('speaking'));
         // 1) 拿麦克风 + 录原始音频
+        // 安全上下文检查：http://IP 访问时浏览器会把 mediaDevices 变 undefined，
+        // 麦克风/蓝牙/语音识别全废、TTS 也连不上——这才是"被拒"的真正原因。
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          toastChat(location.protocol === 'https:'
+            ? '此浏览器不支持麦克风'
+            : '请用 localhost 或 https 打开（当前地址不安全，麦克风/语音都会失效）');
+          return;
+        }
         try {
           this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         } catch (e) {
-          toastChat('麦克风权限被拒绝，无法录音'); return;
+          const map = {
+            NotAllowedError: '麦克风权限被拒绝，请在浏览器地址栏允许麦克风',
+            NotFoundError: '没检测到麦克风设备',
+            NotReadableError: '麦克风被其它程序占用了',
+          };
+          toastChat(map[e && e.name] || ('麦克风打不开：' + (e && e.name || e)));
+          return;
         }
         this.chunks = [];
         try {
@@ -456,6 +576,9 @@
         this.interimText = '';
         this.resultCount = 0;
         this.lastErr = '';
+        this.recogFails = 0;      // 每次新录音重置熔断状态
+        this.recogDead = false;
+        clearTimeout(this.restartTimer);
         if (SR) {
           this._startRecog();
         }
@@ -472,8 +595,12 @@
         r.lang = 'zh-CN';
         r.continuous = true;
         r.interimResults = true;
+        this.recogStartAt = Date.now();
+        let sessionGotResult = false;   // 本段 session 是否出过结果（判定"秒退失败"用）
         r.onresult = (ev) => {
           this.resultCount++;
+          sessionGotResult = true;
+          this.recogFails = 0;   // 出过结果 → 识别是好的，清零熔断计数
           let interim = '';
           for (let i = ev.resultIndex; i < ev.results.length; i++) {
             const res = ev.results[i];
@@ -493,13 +620,36 @@
             if (this._onRecogEnd) { const cb = this._onRecogEnd; this._onRecogEnd = null; cb(); }
             return;
           }
-          // 录音还在进行 → 静音导致的自然结束，自动重启把停顿缝过去
-          try { r.start(); } catch (_) {}
+          if (this.recogDead) return;   // 已熔断：只录音，不再重启识别
+          // 根因修复：连不到识别后端时会"一启动就 end"，若同步立即 r.start() 会形成
+          // start→error→end→start 的高频风暴，打满主线程 → 整页卡死、戒指手势也被拖垮。
+          // 对策：① 秒退（<1.2s 就结束且这段没出过结果）计一次失败，累计到阈值即熔断；
+          //       ② 重启一律用 setTimeout 让出主线程（哪怕正常静音重启，也不再同步递归）。
+          const lived = Date.now() - this.recogStartAt;
+          if (lived < 1200 && !sessionGotResult) {
+            this.recogFails++;   // 启动后 <1.2s 就结束且没出过结果 → 判为一次"秒退失败"
+          }
+          if (this.recogFails >= 3) {
+            this.recogDead = true;
+            recText.textContent = '此环境无法实时转写，仍在为你录音…';
+            return;
+          }
+          // 秒退时退避重启（越连续失败等越久），正常静音结束则很快续上
+          const backoff = this.recogFails > 0 ? Math.min(1500, 300 * this.recogFails) : 120;
+          clearTimeout(this.restartTimer);
+          this.restartTimer = setTimeout(() => {
+            if (this.recording && !this.recogDead) { try { r.start(); } catch (_) {} }
+          }, backoff);
         };
         r.onerror = (ev) => {
           // 诊断：记录并打印错误码（原来这里被吞掉了，导致无法定位转写失败原因）
           this.lastErr = (ev && ev.error) || 'unknown';
-          console.warn('[voice] SpeechRecognition error:', this.lastErr, ev && ev.message);
+          // 致命错误直接熔断，别再重启（服务不可用 / 权限被拒）
+          if (this.lastErr === 'not-allowed' || this.lastErr === 'service-not-allowed' || this.lastErr === 'network') {
+            this.recogFails = 99;
+          }
+          // 只在首次出错时打印一条，避免熔断前的几次重试刷屏（开着 DevTools 时 console 很贵）
+          if (this.recogFails <= 1) console.warn('[voice] SpeechRecognition error:', this.lastErr, ev && ev.message);
         };
         this.recog = r;
         try { r.start(); } catch (_) {}
@@ -509,6 +659,7 @@
         if (!this.recording) return;
         this.recording = false;
         clearTimeout(this.capTimer);
+        clearTimeout(this.restartTimer);   // 防止已排期的重启在收尾后又启一个识别
         micBtn.classList.remove('rec');
         recBar.classList.remove('on');
 
@@ -563,10 +714,28 @@
     // 敲两下戒指 → 收到 DBLTAP 手势 → toggle 录音（wireGestureOnce 只挂一次全局监听，指向当前录音器）
     activeVoiceToggle = () => voice.toggle();
     wireGestureOnce();
+    wireLeaveOnce();
 
     function toastChat(msg) { recText.textContent = msg; recBar.classList.add('on'); setTimeout(() => recBar.classList.remove('on'), 1600); }
 
-    opening();
+    // 敲戒指从别的页面跳进来的 → 用户主动想说话，直接开录。
+    // 标记由 index.html 全局路由写入；这里消费一次即清掉（避免手动进小知页也误触）。
+    let fromRing = false;
+    try {
+      if (sessionStorage.getItem('hbn.ring.autorecord') === '1') {
+        sessionStorage.removeItem('hbn.ring.autorecord');
+        fromRing = true;
+      }
+    } catch (_) {}
+
+    // 用户敲戒指主动进来是「我有话要说」，此时小知的证据开场白会打断分享 → 跳过开场，直接开录。
+    // 手动点进来（非敲击）才由小知带证据主动开场。
+    if (fromRing) {
+      // 稍等一拍，让页面 DOM 先就位，再唤起录音（内含 getUserMedia + 解锁 TTS）
+      setTimeout(() => { try { voice.start(); } catch (_) {} }, 350);
+    } else {
+      opening();
+    }
   }
 
   global.Pages = global.Pages || {};

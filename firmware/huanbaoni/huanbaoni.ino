@@ -100,6 +100,7 @@ enum { HAP_NONE = 0, HAP_INTERCEPT, HAP_ANCHOR, HAP_RETREAT };
 #define MOTOR_PWM_CH    0
 #define MOTOR_PWM_FREQ  200      // Hz, 马达可跟随的低频
 #define MOTOR_PWM_RES   8        // 8bit → 占空 0..255
+#define MOTOR_GAIN      2.0f     // 整体震动强度倍率 (翻倍; 超过 255 自动封顶)
 
 int   hapMode  = HAP_NONE;       // 当前正在播放的档位
 int   hapStep  = 0;              // 当前处于序列的第几步
@@ -112,7 +113,8 @@ const int BR_OUT_MS  = 6000;     // 呼气 6s (渐弱)
 const int BR_CYCLES  = 3;        // 循环 3 轮
 const int BR_MAX_DUTY = 200;     // 呼吸档峰值强度 (中强度)
 
-void motorDuty(int duty) {       // duty 0..255
+void motorDuty(int duty) {       // duty 0..255 (输入按 MOTOR_GAIN 放大后封顶)
+  duty = (int)(duty * MOTOR_GAIN);
   if (duty < 0) duty = 0; if (duty > 255) duty = 255;
   ledcWrite(PIN_MOTOR, duty);    // core v3.x: 按引脚写占空
 }

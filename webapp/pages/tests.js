@@ -124,55 +124,56 @@
   ];
   const HBTI_ANCHORS = ['很不同意', '不同意', '中立', '同意', '很同意']; // 1..5
 
-  // 16 型内容:key=四字码,码序 perceive(敏/从)·feel(蕴/露)·connect(足/偎)·recover(柔/坚)
-  // 每型:原型名 + 意象 + 描述 + 你最渴望被环抱的方式。所有型皆被珍视,无褒贬。
+  // 16 型内容:key=四字码(仅内部计分,不对用户展示),码序 perceive(敏/从)·feel(蕴/露)·connect(足/偎)·recover(柔/坚)
+  // 每型:nickname 代表物别称(对外身份)· animal 灵性小生灵 · emoji 兜底符 · name 原型名 · img 意象 · desc 描述 · hug 被环抱的方式
+  // 一型一只专属小生灵,凑成「环抱人格宇宙」。所有型皆被珍视,无褒贬。
   const HBTI_TYPES = {
-    '敏蕴足柔': { name: '林间的独修者', img: '在幽静林间,独自照料一方心田。',
+    '敏蕴足柔': { nickname: '林间小鹿', animal: '鹿', emoji: '🦌', name: '林间的独修者', img: '在幽静林间,独自照料一方心田。',
       desc: '你感知细腻,习惯把丰盈的内心慢慢消化。你在独处里恢复能量,也懂得在跌倒时温柔地接住自己。你不喧哗,却有一个深邃而自洽的世界。',
       hug: '你需要"不被打扰的温柔"——有人远远守着,不催不问,让你按自己的节奏慢慢好起来。' },
-    '敏蕴足坚': { name: '深谷的引泉人', img: '在深谷里,默默把清泉引向远方。',
+    '敏蕴足坚': { nickname: '深谷夜枭', animal: '猫头鹰', emoji: '🦉', name: '深谷的引泉人', img: '在深谷里,默默把清泉引向远方。',
       desc: '你感受敏锐却不张扬,喜欢先在心里想透,再一步步行动。你靠自己站稳,受挫时不耽溺,而是把它化成向前的力气。安静,却极有韧性。',
       hug: '你需要"被信任的坚持"——有人相信你能扛住,并在你默默用力时说一句"我看见了"。' },
-    '敏蕴偎柔': { name: '烛旁的倾听者', img: '在暖烛旁,静静听一个人说完心事。',
+    '敏蕴偎柔': { nickname: '烛光小兔', animal: '兔', emoji: '🐰', name: '烛旁的倾听者', img: '在暖烛旁,静静听一个人说完心事。',
       desc: '你细腻、深情,把感受收在心底慢慢体会。你在亲近的联结里感到安心,也总能温柔地善待自己和他人。你是那种让人愿意卸下防备的人。',
       hug: '你需要"被认真倾听"——有人愿意安静地听你把心里的话,一点点说出来。' },
-    '敏蕴偎坚': { name: '灯塔的守信人', img: '在海边灯塔,为约定的人守一盏长明的灯。',
+    '敏蕴偎坚': { nickname: '灯塔天鹅', animal: '天鹅', emoji: '🦢', name: '灯塔的守信人', img: '在海边灯塔,为约定的人守一盏长明的灯。',
       desc: '你感知敏锐、情深不外露,重视与人的紧密联结。你在关系里全心投入,受挫时不退缩,而是更坚定地守住在乎的人和事。深情又可靠。',
       hug: '你需要"被稳稳回应"——有人在你默默守护时,同样认真地朝你走来。' },
-    '敏露足柔': { name: '溪畔的拾光者', img: '沿着溪流,把散落的微光一颗颗拾起。',
+    '敏露足柔': { nickname: '溪畔翠鸟', animal: '翠鸟', emoji: '🐦', name: '溪畔的拾光者', img: '沿着溪流,把散落的微光一颗颗拾起。',
       desc: '你感受细腻,情绪自然流露,像溪水一样透明。你享受独处的自由,也懂得温柔待己。你留意别人错过的小美好,并毫不掩饰地为之欢喜。',
       hug: '你需要"被看见的细腻"——有人注意到你注意到的那些小事,轻声说"我也看到了"。' },
-    '敏露足坚': { name: '山径的探路人', img: '独自走过没有路标的山径,边走边把风景说给风听。',
+    '敏露足坚': { nickname: '山径小狐', animal: '狐狸', emoji: '🦊', name: '山径的探路人', img: '独自走过没有路标的山径,边走边把风景说给风听。',
       desc: '你敏锐、真诚,喜怒都写在脸上。你靠自己的节奏前行,也不怕表达。跌倒了,你会拍拍尘土、定个新目标继续走。自由而有劲。',
       hug: '你需要"被支持的独立"——有人相信你的选择,在你回头时始终都在。' },
-    '敏露偎柔': { name: '花间的传信者', img: '像蝴蝶穿行花间,把温柔与心意传给每个人。',
+    '敏露偎柔': { nickname: '花间蝴蝶', animal: '蝴蝶', emoji: '🦋', name: '花间的传信者', img: '像蝴蝶穿行花间,把温柔与心意传给每个人。',
       desc: '你共情力强,情感丰沛又乐于流露。你在亲密的陪伴里最有安全感,也总是温柔地接住别人和自己。你让身边的人感到被珍视。',
       hug: '你需要"被同样珍视"——有人在你付出温柔后,给你一个同样柔软的回抱。' },
-    '敏露偎坚': { name: '篝火的召集人', img: '点起一堆篝火,把散落的人一个个唤到身边。',
+    '敏露偎坚': { nickname: '篝火大雁', animal: '大雁', emoji: '🪿', name: '篝火的召集人', img: '点起一堆篝火,把散落的人一个个唤到身边。',
       desc: '你敏锐热忱,情感外放,渴望与人紧密相连。你为在乎的人全力以赴,受挫时越挫越勇。你是把大家聚在一起、一起向前的那束火光。',
       hug: '你需要"被并肩支持"——有人在你带着大家往前冲时,坚定地站在你身旁。' },
-    '从蕴足柔': { name: '山居的煮茶人', img: '在山间小屋,慢慢煮一壶给自己的茶。',
+    '从蕴足柔': { nickname: '山居闲猫', animal: '猫', emoji: '🐈', name: '山居的煮茶人', img: '在山间小屋,慢慢煮一壶给自己的茶。',
       desc: '你感知从容,不易被外界扰动,习惯把心事静静沉淀。你在独处里自得,受挫时温柔地善待自己。你活得舒缓而笃定,自成一方天地。',
       hug: '你需要"被允许慢下来"——有人陪你什么都不做,只是安静地待一会儿。' },
-    '从蕴足坚': { name: '旷野的筑屋人', img: '在空旷的原野上,一砖一瓦盖起自己的屋。',
+    '从蕴足坚': { nickname: '旷野陆龟', animal: '陆龟', emoji: '🐢', name: '旷野的筑屋人', img: '在空旷的原野上,一砖一瓦盖起自己的屋。',
       desc: '你沉稳、内敛,遇事先想清楚再动手。你靠自己把生活安顿得踏实,受挫也不慌,只是默默把它做得更好。可靠得像大地一样。',
       hug: '你需要"被看见付出"——有人在你独自扛下一切后,认真地说一句"辛苦了"。' },
-    '从蕴偎柔': { name: '炉边的守护者', img: '守着一炉暖火,让每个归来的人都有热汤喝。',
+    '从蕴偎柔': { nickname: '炉边暖犬', animal: '犬', emoji: '🐕', name: '炉边的守护者', img: '守着一炉暖火,让每个归来的人都有热汤喝。',
       desc: '你平和、体贴,把感受收在心里,却用行动温暖身边人。你在亲近的联结里感到踏实,也总记得善待自己。你是家一样让人安心的存在。',
       hug: '你需要"被反过来照顾"——有人在你忙着照顾所有人时,轻轻问你"那你呢"。' },
-    '从蕴偎坚': { name: '城邦的筑造者', img: '一砖一瓦,把愿景建成人们可以栖居的城。',
+    '从蕴偎坚': { nickname: '城邦巨象', animal: '象', emoji: '🐘', name: '城邦的筑造者', img: '一砖一瓦,把愿景建成人们可以栖居的城。',
       desc: '你沉稳可靠,重视与人的联结,习惯默默行动。你目标清晰、说到做到,受挫时更坚定。你是团队里可以托付大事、让人安心的那根梁。',
       hug: '你需要"被分担重量"——有人在你运筹一切时,主动接过一部分担子。' },
-    '从露足柔': { name: '广场的暖阳', img: '像洒在广场上的阳光,让路过的人都暖了一下。',
+    '从露足柔': { nickname: '广场水獭', animal: '水獭', emoji: '🦦', name: '广场的暖阳', img: '像洒在广场上的阳光,让路过的人都暖了一下。',
       desc: '你从容开朗,情绪自然流露,不易被烦恼困住。你享受自在,也懂得温柔待己。你的善意直接而不设防,常常是人群里最先伸手的那个。',
       hug: '你需要"被真心回应"——有人在你付出热情后,给你同样真诚的回抱。' },
-    '从露足坚': { name: '市集的弄潮儿', img: '在热闹的市集里,敏捷地捕捉每一个机会。',
+    '从露足坚': { nickname: '逐浪海豚', animal: '海豚', emoji: '🐬', name: '市集的弄潮儿', img: '在热闹的市集里,敏捷地捕捉每一个机会。',
       desc: '你稳得住又敢表达,喜欢行动、喜欢尝试。你独立自主,面对变化不慌反兴奋。跌倒了拍拍就起,定个新目标继续闯。生机勃勃。',
       hug: '你需要"被允许停下来"——有人在你不停向前时,拉住你说"歇会儿,我陪你"。' },
-    '从露偎柔': { name: '巷口的暖灯', img: '在巷子口,为晚归的人留一盏温柔的灯。',
+    '从露偎柔': { nickname: '巷口松鼠', animal: '松鼠', emoji: '🐿️', name: '巷口的暖灯', img: '在巷子口,为晚归的人留一盏温柔的灯。',
       desc: '你温和外向,情感自然流露,喜欢和人亲近。你在陪伴里安心,也总是柔软地对待自己和别人。你让身边的人觉得被接纳、被欢迎。',
       hug: '你需要"被温柔靠近"——有人主动走近你,给你一个不设防的拥抱。' },
-    '从露偎坚': { name: '远行的引路人', img: '举着火把,带一群人走向想象中的远方。',
+    '从露偎坚': { nickname: '远行骏马', animal: '马', emoji: '🐎', name: '远行的引路人', img: '举着火把,带一群人走向想象中的远方。',
       desc: '你从容热忱,善于表达,又懂得联结人心。你带着大家往前走,受挫时更坚定。你的温暖里,藏着一份对更好未来的笃定期待。',
       hug: '你需要"被支持理想"——有人相信你描绘的远方,并说"我和你一起去"。' },
   };
@@ -296,7 +297,7 @@
     // 置顶招牌:HBTI 人格测试(比常规量表卡更突出)
     const lastHbti = lastRecordOf('hbti');
     const heroLast = lastHbti
-      ? `<div class="ts-hero-last">上次：${lastHbti.typeName || ''} · ${fmtDate(lastHbti.ts)}</div>`
+      ? `<div class="ts-hero-last">上次：${lastHbti.emoji || ''} ${lastHbti.nickname || lastHbti.typeName || ''} · ${fmtDate(lastHbti.ts)}</div>`
       : `<div class="ts-hero-last">测一测,看见你如何被世界拥抱 ›</div>`;
     const hero = `
       <button type="button" class="ts-hero" id="tsHero">
@@ -447,7 +448,7 @@
     const rec = addRecord({
       kind: 'hbti',
       scaleId: 'hbti', title: HBTI_META.title,
-      code: res.code, typeName: t.name, bars: res.bars,
+      code: res.code, typeName: t.name, nickname: t.nickname, animal: t.animal, emoji: t.emoji, bars: res.bars,
       typeDesc: t.desc, typeHug: t.hug,
       answers: state.answers.slice(),
       interpretation: fallbackHBTIInterp(res),
@@ -539,17 +540,38 @@
       </svg>`;
   }
 
+  // 双极强度条:两极(极字+中文)分列左右,填充从中线偏向主导极,一眼看出"更靠近哪边"。
+  // 保留最初的四维极字设定(敏蕴足柔 / 从露偎坚)作为维度批注,不再作为孤立的用户身份码。
+  function renderHBTIBars(bars) {
+    return (bars || []).map(b => {
+      const d = HBTI_DIMS.find(x => x.key === b.dim) || {};
+      const isPos = b.pole ? (b.pole === d.pos) : true; // 主导极是否右极
+      const lean = Math.max(0, Math.min(50, (b.pct || 50) - 50)); // 偏离中线 0..50
+      const even = lean === 0;                                     // 正好居中：两极均衡
+      const fillStyle = isPos ? `left:50%;width:${lean}%` : `right:50%;width:${lean}%`;
+      // 一律给出数字，四维保持一致；正好居中时不偏袒任一极，居中标「均衡」
+      const pctTag = ` <span class="hb-pole-pct">${b.pct}%</span>`;
+      return `
+        <div class="hb-bar-row">
+          <div class="hb-bar-ends">
+            <span class="hb-pole ${!even && !isPos ? 'on' : ''}"><b>${d.neg || ''}</b> ${d.negLabel || ''}${!even && !isPos ? pctTag : ''}</span>
+            <span class="hb-pole ${!even && isPos ? 'on' : ''}">${!even && isPos ? pctTag : ''}${d.posLabel || ''} <b>${d.pos || ''}</b></span>
+          </div>
+          <div class="hb-bar-track">
+            <div class="hb-bar-mid"></div>
+            <div class="hb-bar-fill ${isPos ? 'pos' : 'neg'}" style="${fillStyle}"></div>
+            ${even ? `<span class="hb-bar-even">均衡</span>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
   // ======================= HBTI 结果页 =======================
   function paintHBTIResult() {
     const res = state._result;
-    const t = res.type || { name: '独特的你', img: '', desc: '每个人都是独一无二的。', hug: '' };
+    const t = res.type || { nickname: '独特的你', animal: '', emoji: '✨', name: '独特的你', img: '', desc: '每个人都是独一无二的。', hug: '' };
 
-    const bars = res.bars.map(b => `
-      <div class="hb-bar-row">
-        <div class="hb-bar-label">${b.label}</div>
-        <div class="hb-bar-track"><div class="hb-bar-fill" style="width:${b.pct}%"></div></div>
-        <div class="hb-bar-pct">${b.pct}%</div>
-      </div>`).join('');
+    const bars = renderHBTIBars(res.bars);
 
     el.innerHTML = `
       <div class="ts-wrap">
@@ -558,10 +580,9 @@
         </div>
 
         <div class="hb-card card">
-          <div class="hb-portrait" id="hbPortrait">${hbtiImageSVG(res.code)}</div>
-          <div class="hb-code">${res.code.split('').join(' · ')}</div>
-          <div class="hb-name">${t.name}</div>
-          ${t.img ? `<div class="hb-imgline muted">${t.img}</div>` : ''}
+          <div class="hb-portrait" id="hbPortrait">${hbtiImageSVG(res.code, t)}</div>
+          <div class="hb-nick">${escapeHtml(t.nickname || t.name)}</div>
+          ${t.img ? `<div class="hb-imgline muted">${escapeHtml(t.img)}</div>` : ''}
         </div>
 
         <div class="hb-bars card">${bars}</div>
@@ -606,30 +627,32 @@
     enhanceHBTIPortrait(res, recId);
   }
 
-  // 原创意象图(SVG 兜底,恒有):按类型码取莫兰迪色 + 图腾,无网络也精致。
-  function hbtiImageSVG(code) {
+  // 原创意象图(SVG 兜底,恒有):莫兰迪油画感圆盘 + 该型专属小生灵,无网络也精致、且 16 型各不相同。
+  function hbtiImageSVG(code, type) {
+    const t = type || HBTI_TYPES[code] || {};
     const sensitive = code[0] === '敏';   // 感知:敏=细腻深邃(冷) / 从=从容(暖)
     const express = code[1] === '露';     // 感受:露=向外流露(星点波纹) / 蕴=向内消化(同心圆)
     // 主色:敏偏冷静深邃,从偏暖;用 tokens.css 变量
     const c1 = sensitive ? 'var(--calm)' : 'var(--accent)';
     const c2 = sensitive ? 'var(--accent-deep)' : 'var(--mid)';
-    // 由类型码派生一个稳定的旋转角,让 16 型可区分(不依赖随机)
+    // 由类型码派生一个稳定的旋转角,让 16 型底纹可区分(不依赖随机)
     const seed = code.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0);
     const rot = seed % 360;
-    // 露=星点/波纹(向外流露);蕴=同心圆(向内沉淀)
+    // 露=星点/波纹(向外流露);蕴=同心圆(向内沉淀)——作为环境底纹烘托小生灵
     const motif = express
-      ? `<g opacity="0.85">
-           <circle cx="70" cy="46" r="2.4" fill="#fff"/>
-           <circle cx="98" cy="70" r="1.8" fill="#fff"/>
-           <circle cx="52" cy="86" r="2" fill="#fff"/>
-           <circle cx="86" cy="98" r="1.6" fill="#fff"/>
-           <path d="M40 70 Q70 55 100 70 T160 70" fill="none" stroke="#fff" stroke-width="1.4" opacity="0.5"/>
+      ? `<g opacity="0.7">
+           <circle cx="34" cy="34" r="2.4" fill="#fff"/>
+           <circle cx="108" cy="42" r="1.8" fill="#fff"/>
+           <circle cx="30" cy="92" r="2" fill="#fff"/>
+           <circle cx="112" cy="104" r="1.6" fill="#fff"/>
+           <path d="M22 116 Q70 100 118 116" fill="none" stroke="#fff" stroke-width="1.4" opacity="0.45"/>
          </g>`
-      : `<g fill="none" stroke="#fff" stroke-width="1.6" opacity="0.55">
-           <circle cx="70" cy="70" r="16"/>
-           <circle cx="70" cy="70" r="26"/>
-           <circle cx="70" cy="70" r="36"/>
+      : `<g fill="none" stroke="#fff" stroke-width="1.4" opacity="0.4">
+           <circle cx="70" cy="70" r="30"/>
+           <circle cx="70" cy="70" r="44"/>
+           <circle cx="70" cy="70" r="58"/>
          </g>`;
+    const emoji = t.emoji || '✨';
     return `
       <svg viewBox="0 0 140 140" width="128" height="128" class="hb-svg" aria-hidden="true">
         <defs>
@@ -642,6 +665,7 @@
           <circle cx="70" cy="70" r="60" fill="url(#hbg${seed})"/>
         </g>
         ${motif}
+        <text x="70" y="70" font-size="52" text-anchor="middle" dominant-baseline="central">${emoji}</text>
       </svg>`;
   }
 
@@ -649,15 +673,16 @@
     const t = res.type; if (!t) return;
     try {
       AI.loadFromStore();
-      // 复用 portrait 的"抽象、温暖、无人脸、无文字"风格,不传隐私,只传原型意象。
-      const prompt = `An abstract, gentle emotional portrait representing a person's inner nature. ` +
-        `Theme: "${t.name}" — ${t.img} ` +
-        `Soft abstract oil painting, flowing organic shapes, visible brush texture, no human faces, no text. ` +
-        `Warm Morandi color palette, poetic and comforting. 1024x1024.`;
+      // 小知油画风:厚涂笔触、莫兰迪、温柔,主体是该型专属小生灵(无人脸、无文字),打造统一「环抱人格宇宙」。
+      const prompt = `A gentle oil painting of a single ${t.animal || 'small creature'}, ` +
+        `spirit-animal emblem for the personality archetype "${t.name}". ` +
+        `Scene mood: ${t.img} ` +
+        `Impasto brush strokes, soft Morandi color palette, dreamy warm light, painterly and comforting. ` +
+        `Centered subject, simple background, no human faces, no text, no letters. 1024x1024.`;
       const url = await AI.image(prompt);
       if (url && state.view === 'result' && state.mode === 'hbti' && state._recId === recId) {
         const box = document.getElementById('hbPortrait');
-        if (box) box.innerHTML = `<img class="hb-img" src="${url}" alt="${escapeHtml(t.name)}">`;
+        if (box) box.innerHTML = `<img class="hb-img" src="${url}" alt="${escapeHtml(t.nickname || t.name)}">`;
       }
     } catch (e) {
       // 保持 SVG 兜底,静默
@@ -709,7 +734,7 @@
       AI.loadFromStore();
       const sys = AI.persona + `
 【当前情境】用户刚完成「环抱你(HBTI)」原创人格测试(非诊断)。
-结果类型:「${t.name}」(${res.code});四维强度:${barTxt}。
+结果类型:「${t.name}」,别称「${t.nickname || t.name}」,代表灵物是${t.animal || ''};四维强度:${barTxt}。
 类型底稿:${t.desc}
 你的任务:以小知的口吻,把这份结果温柔地读给这个具体的人听。要求:
 1. 先接住 ta、给到共鸣,不要复述数据、不要下"你有某某问题"的诊断;
@@ -739,8 +764,8 @@
       ? list.map(r => {
           // HBTI 记录没有分数,展示类型名;量表记录展示分数+分段
           const main = r.kind === 'hbti'
-            ? `<div class="ts-rec-title">${r.title} · <b>${r.typeName || ''}</b></div>
-               <div class="ts-rec-band muted">${(r.code || '').split('').join('·')} · ${fmtDate(r.ts)}</div>`
+            ? `<div class="ts-rec-title">${(r.emoji || '')} <b>${r.nickname || r.typeName || ''}</b></div>
+               <div class="ts-rec-band muted">${r.typeName || ''} · ${fmtDate(r.ts)}</div>`
             : `<div class="ts-rec-title">${r.title} · <b>${r.score}</b>/${r.maxScore}</div>
                <div class="ts-rec-band muted">${r.bandLabel} · ${fmtDate(r.ts)}</div>`;
           return `
@@ -782,17 +807,12 @@
     // HBTI 记录:类型名 + 意象图 + 强度条;量表记录:分段 + 分数
     let head, fallbackInterpBody;
     if (rec.kind === 'hbti') {
-      const bars = (rec.bars || []).map(b => `
-        <div class="hb-bar-row">
-          <div class="hb-bar-label">${b.label}</div>
-          <div class="hb-bar-track"><div class="hb-bar-fill" style="width:${b.pct}%"></div></div>
-          <div class="hb-bar-pct">${b.pct}%</div>
-        </div>`).join('');
+      const bars = renderHBTIBars(rec.bars);
+      const rt = HBTI_TYPES[rec.code] || {};
       head = `
         <div class="hb-card card">
-          <div class="hb-portrait">${hbtiImageSVG(rec.code || '潜觉融岸')}</div>
-          <div class="hb-code">${(rec.code || '').split('').join(' · ')}</div>
-          <div class="hb-name">${rec.typeName || ''}</div>
+          <div class="hb-portrait">${hbtiImageSVG(rec.code || '敏蕴足柔', rt)}</div>
+          <div class="hb-nick">${escapeHtml(rec.nickname || rt.nickname || rec.typeName || '')}</div>
           <div class="ts-rec-band muted">${fmtDate(rec.ts)}</div>
         </div>
         ${bars ? `<div class="hb-bars card">${bars}</div>` : ''}
@@ -933,15 +953,23 @@
       .hb-portrait{width:128px;height:128px;display:flex;align-items:center;justify-content:center;}
       .hb-svg{display:block;border-radius:50%;box-shadow:var(--shadow);}
       .hb-img{width:128px;height:128px;border-radius:50%;object-fit:cover;box-shadow:var(--shadow);}
-      .hb-code{font-size:13px;color:var(--sub);letter-spacing:2px;margin-top:6px;}
-      .hb-name{font-size:22px;font-weight:700;color:var(--ink);}
+      .hb-nick{font-size:22px;font-weight:700;color:var(--ink);margin-top:6px;letter-spacing:1px;}
       .hb-imgline{font-size:13px;line-height:1.6;}
-      .hb-bars{display:flex;flex-direction:column;gap:14px;padding:20px 20px;}
-      .hb-bar-row{display:flex;align-items:center;gap:10px;}
-      .hb-bar-label{font-size:12px;color:var(--sub);width:76px;flex:none;}
-      .hb-bar-track{flex:1;height:8px;background:var(--line);border-radius:999px;overflow:hidden;}
-      .hb-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-deep));}
-      .hb-bar-pct{font-size:12px;color:var(--accent-deep);width:38px;text-align:right;flex:none;font-weight:600;}
+      .hb-bars{display:flex;flex-direction:column;gap:18px;padding:22px 20px;}
+      .hb-bar-row{display:flex;flex-direction:column;gap:7px;}
+      .hb-bar-ends{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--sub);}
+      .hb-pole{display:flex;align-items:baseline;gap:4px;}
+      .hb-pole b{font-size:16px;font-weight:700;color:var(--sub);}
+      .hb-pole.on{color:var(--ink);}
+      .hb-pole.on b{color:var(--accent-deep);}
+      .hb-pole-pct{font-size:11px;color:var(--accent-deep);font-weight:600;}
+      .hb-bar-track{position:relative;height:8px;background:var(--line);border-radius:999px;}
+      .hb-bar-mid{position:absolute;left:50%;top:-2px;width:1px;height:12px;background:var(--line);transform:translateX(-50%);}
+      .hb-bar-fill{position:absolute;top:0;height:100%;}
+      .hb-bar-fill.pos{border-radius:0 999px 999px 0;background:linear-gradient(90deg,var(--accent),var(--accent-deep));}
+      .hb-bar-fill.neg{border-radius:999px 0 0 999px;background:linear-gradient(270deg,var(--accent),var(--accent-deep));}
+      .hb-bar-even{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+        font-size:10px;color:var(--sub);background:var(--bg,#fff);padding:0 6px;border-radius:999px;letter-spacing:.5px;white-space:nowrap;}
       .hb-desc{padding:20px 20px;}
       .hb-desc-body{font-size:14px;line-height:1.9;color:var(--ink);}
       .hb-hug{margin-top:14px;padding:14px 16px;background:#FBF6F1;border-radius:14px;

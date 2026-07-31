@@ -1,276 +1,571 @@
 // ============================================================
-// 知愈·Ring「环抱你」演示外壳  enclosure.scad
-// 参数化模型：底座盒(tray) + 上盖(lid)
-// 尺寸依据 docs/硬件规格与外壳.md
+// 环抱你 · 小白 — true 3D character enclosure
 //
-// 用法：
-//   1) 改下面 show 选择要导出的部件： "tray" / "lid" / "both"
-//   2) 顶部参数区按实测微调（尤其 usb_center_spacing / usb_center_z）
-//   3) 已装 OpenSCAD：
-//        openscad -o tray.stl -D 'show="tray"' enclosure.scad
-//        openscad -o lid.stl  -D 'show="lid"'  enclosure.scad
-//
-// 设计基调：圆润莫兰迪、多留白、禁硬直角（知愈调性）。
-//   · 盒体四角竖向圆角，边缘柔和
-//   · 盖顶左上角 logo（知愈·FeelingMosaic / Ring 真系列）
-//   · 盖顶中部只留 hero「环抱你」+ 环抱它的一圈浅刻(呼应“环抱”)
-// ⚠️ 最需核对：ESP32 两 Type-C 中心间距 usb_center_spacing(默认13)。
+// The electronics are hidden inside a rounded humanoid torso.
+// A 56 x 83 mm half breadboard mounts vertically in the belly.
+// This is not a decorated box: every external silhouette is character form.
 // ============================================================
 
-show = "both";          // "tray" | "lid" | "both"
-$fn = 64;
+show = "assembled";
+$fn = 96;
+$fn_arm = 72;
 
-// ---------- 壁厚/公差/圆角 ----------
-wall     = 2.0;
-floor_t  = 2.0;
-lid_t    = 3.0;
-tol      = 0.4;
-corner_r = 8;           // 盒体四角圆角(越大越柔和)
-top_chamf= 1.8;         // 顶沿柔化倒角(含蓄有机曲面, 去硬边)
+// ---------- Minimum electronics envelope ----------
+cavity_w = 62; // half breadboard width + tolerance
+cavity_d = 32; // original 32 mm component/wiring depth
+cavity_h = 90; // 83 mm breadboard + end clearance
+cavity_z = 62;
+wall = 2.4;
+fit_tol = 0.35;
 
-// ---------- 内腔(面包板56x165x8.5 + ESP32 + 走线) ----------
-in_w = 62;
-in_l = 172;
-in_h = 32;
+// Hand interaction: clear slot between belly and forearms. A palm slides in
+// from below/front, presses MAX30102, and is gently hugged at both edges.
+hand_clearance = 22;
 
-out_w  = in_w + 2*wall;
-out_l  = in_l + 2*wall;
-tray_h = floor_t + in_h;
+// ---------- Existing functional interfaces (sizes unchanged) ----------
+usb_port_w = 11;
+usb_port_h = 6;
+usb_center_spacing = 13;
+usb_center_z = -2;
+esp_board_l = 63.3;
+esp_board_w = 27.9;
+esp_plane_y = 9;
 
-// ---------- 双 Type-C 独立孔(端墙 y=0 面) ----------
-usb_port_w        = 11;
-usb_port_h        = 6;
-usb_center_spacing= 13;   // ★两孔中心间距(最需核对)
-usb_center_z      = 14;
+wire_hole_d = 9;
+wire_hole_gap = 14;
+wire_hole_z = 50;
 
-// ---------- 侧面出线孔 ×2 (GSR电极线 + 马达线) ----------
-wire_hole_d   = 9;
-wire_hole_z   = 22;          // 抬高: 原10被面包板(顶≈z10.5)挡住一半 → 抬到22完全露出
-wire_hole_y   = out_l*0.7;   // 沿长轴位置
-wire_hole_gap = 14;          // 两孔间距(GSR线 + 马达线各一个)
+max_bw = 15.5;
+max_bl = 20;
+max_recess_d = 1.2;
+max_open_w = 17;
+max_bridge_w = 4.5;
+max_slot_l = 20;
+max_z = 72;
 
-// ---------- 盖顶：MAX30102(工字托盘) + MPU6050(单边L横槽) ----------
-// MAX30102 心率：排针在左右两边(4+4)，连接器朝下 → 中间托起 + 两侧下沉通槽(工字)
-max_bw = 15.5;  max_bl = 20;   // 板 宽×长
-max_recess_d = 1.2;            // 定位浅槽深(板嵌入, 传感器朝上供手指按)
-max_open_w   = 17;            // 横跨两排针的总开口宽(到板两边)
-max_bridge_w = 4.5;          // 中间支撑柱宽(原8.5的一半, 让出板底元件+排针空间)
-max_slot_l   = 20;            // 单侧下沉槽长(沿排针方向, 加长少留边距)
-max_pos_from_end = 160;        // 聚到远端, 让出中部留白给 hero
-
-// MPU6050 运动：排针只在一条边(L) → 一条大横槽给单排针
-mpu_bw = 16;   mpu_bl = 21;
+mpu_bw = 16;
+mpu_bl = 21;
 mpu_recess_d = 1.2;
-mpu_slot_w   = 5;              // 横槽宽
-mpu_slot_l   = 22;           // 横槽长(沿排针方向): 加长到满板长, 上下不留边距(原19排针卡住)
-mpu_edge_off = 5;             // 横槽中心距板中心(移到一条边下)
-mpu_pos_from_end = 133;
+mpu_slot_w = 5;
+mpu_slot_l = 22;
+mpu_edge_off = 5;
+mpu_z = 82;
 
-// ---------- 刻字(凹刻) ----------
-engrave       = true;
-engrave_depth = 0.8;
-font_cn       = "Heiti SC";  // OpenSCAD2021可读；备选 Songti SC / Hiragino Sans GB。⚠️PingFang/Noto会豆腐块
-
-// logo（左上角，两行）
-logo_l1   = "知愈·FeelingMosaic";
-logo_l2   = "Ring 真系列";
-logo_size = 3.2;
-logo_x    = corner_r + 3;    // 距左边
-logo_y    = 16;              // 距 y=0 端(在 MAX 之前的留白区)
-
-// hero（中部，仅「环抱你」）+ 环抱浅圈
-hero_txt   = "「环抱你」";
-hero_size  = 9;
-hero_y     = 80;            // 中部整块留白的中心(传感器已聚到远端)
-hero_ring  = true;         // 是否刻一圈“环抱”它
-hero_ring_r= 27;           // 圈半径
-hero_ring_w= 1.4;          // 圈线宽
-
-// ---------- 环抱手臂(分体打印, 莫兰迪肤色) ----------
-// 两只手臂从长边升起, 翻过盖沿, 双手在顶部十指相扣扣住盖子(兼当卡扣)。
-arm_on     = true;         // 组装/预览时是否显示手臂
-embrace_y  = out_l/2;      // 环抱中心(沿长轴), 与 hero 呼应
-hand_yoff  = 3.2;          // 左右手在 y 上错开 → 十指相扣的交错感
-foot_w     = 15;           // (旧矩形脚参数, 保留兼容)
-foot_h     = 18;
-foot_recess= 1.2;          // 墙上圆形凹座深(手臂圆根嵌入; 墙厚2mm, 余0.8mm)
-foot_out   = 2.5;          // 安装脚凸出墙外的厚度(供限位blend进手臂)
-foot_z0    = 5;            // 肩根参考 z
-socket_d   = 13;           // ★圆形凹座直径(匹配圆形手臂根部, 圆对圆自对位)
-foot_cz    = 13;           // 圆形凹座中心高 z
-$fn_arm    = 40;           // 手臂球体细分(平衡出图速度)
+// Flat sensor bosses: a small platform stands proud of the curved belly so the
+// board + pin header seat squarely and every opening penetrates cleanly.
+max_face_y = 45;   // front MAX30102 boss outer flat face (belly ~43.4 here)
+mpu_face_y = -39;  // back  MPU6050  boss outer flat face (belly ~-37.6 here)
 
 // ============================================================
-// 圆角矩形(2D)
-module rrect(w, l, r) {
-  hull() for (x = [r, w-r]) for (y = [r, l-r]) translate([x, y]) circle(r = r);
+// Primitives
+module ellipsoid(pos, radii, fn = $fn) {
+  translate(pos) scale(radii) sphere(r = 1, $fn = fn);
 }
 
-// ============================================================
-// 有机肢体：沿路径的相邻控制点做球体 hull → 光滑锥形手臂
-module limb(pts, rads) {
-  for (i = [0:len(pts)-2])
-    hull() {
-      translate(pts[i])   sphere(r = rads[i],   $fn = $fn_arm);
-      translate(pts[i+1]) sphere(r = rads[i+1], $fn = $fn_arm);
-    }
+module rounded_box(size, r, center = true) {
+  sx = size[0]; sy = size[1]; sz = size[2];
+  translate(center ? [0, 0, 0] : [sx / 2, sy / 2, sz / 2])
+    hull()
+      for (x = [-sx / 2 + r, sx / 2 - r])
+        for (y = [-sy / 2 + r, sy / 2 - r])
+          for (z = [-sz / 2 + r, sz / 2 - r])
+            translate([x, y, z]) sphere(r = r, $fn = 28);
 }
 
-// 圆润手掌(连指手套式, 无脆弱手指, 好打印) + 拇指
-// s: +1 右手 / -1 左手 (决定拇指朝向)
-module hand(pos, r, s) {
-  translate(pos) {
-    scale([1.35, 1.0, 0.62]) sphere(r = r, $fn = $fn_arm);          // 手掌扁球
-    translate([s*r*0.55, -r*0.35, 0])
-      scale([0.65, 0.9, 0.55]) sphere(r = r*0.62, $fn = $fn_arm);   // 拇指
+module capsule_2d(len, width) {
+  hull() {
+    translate([-len / 2, 0]) circle(d = width);
+    translate([ len / 2, 0]) circle(d = width);
   }
 }
 
-// 一只环抱手臂 (s=+1 右侧墙 x=out_w / s=-1 左侧墙 x=0)
-module arm(s) {
-  rx = (s > 0) ? out_w : 0;         // 根部所在墙面
-  yb = embrace_y;
-  yo = (s > 0) ? -hand_yoff : hand_yoff;   // 手部错位, 形成交错相扣
-  pts = [
-    [rx + s*0.2,  yb,          foot_z0 + 4],   // 肩根(贴墙, 融入安装脚)
-    [rx + s*3.0,  yb,          17],            // 上臂外鼓(收窄, 抱得更紧)
-    [rx + s*2.5,  yb,          27],            // 肘
-    [rx - s*3.0,  yb + yo*0.4, 37.5],          // 前臂翻过盖沿, 落到盖顶(z37)之上
-    [rx - s*15,   yb + yo*0.7, 40],            // 腕(轻搭盖顶)
-    [rx - s*26,   yb + yo,     39],            // 接近中心, 准备相扣
+module rounded_plate(w, d, h, r, pos) {
+  translate(pos)
+    hull()
+      for (x = [-w / 2 + r, w / 2 - r])
+        for (z = [-h / 2 + r, h / 2 - r])
+          translate([x, 0, z])
+            rotate([90, 0, 0]) cylinder(h = d, r = r, center = true, $fn = 28);
+}
+
+module heart_2d(w, h) {
+  scale([w / 28, h / 28])
+    union() {
+      hull() {
+        translate([-6.3, 5]) circle(r = 7.2, $fn = 36);
+        translate([0, -10]) circle(r = 1.2, $fn = 24);
+      }
+      hull() {
+        translate([6.3, 5]) circle(r = 7.2, $fn = 36);
+        translate([0, -10]) circle(r = 1.2, $fn = 24);
+      }
+    }
+}
+
+module heart_plate(w, d, h, pos) {
+  translate(pos)
+    rotate([90, 0, 0])
+      linear_extrude(d, center = true)
+        heart_2d(w, h);
+}
+
+function unit(v) = v / norm(v);
+function bezier3(p0, p1, p2, p3, t) =
+  p0 * pow(1 - t, 3) +
+  p1 * (3 * pow(1 - t, 2) * t) +
+  p2 * (3 * (1 - t) * t * t) +
+  p3 * (t * t * t);
+
+function arm_center(s, t, palm_y) =
+  t <= 0.5
+    ? let(u = t * 2,
+          p = bezier3([38, 4, 98], [54, 7, 91], [61, 17, 73], [56, 32, 66], u))
+      [s * p[0], p[1], p[2]]
+    : let(u = (t - 0.5) * 2,
+          p = bezier3([56, 32, 66], [55, 47, 61], [47, palm_y - 3, 66], [36, palm_y, 73], u))
+      [s * p[0], p[1], p[2]];
+
+function arm_radius(t) =
+  12.6 - 2.4 * t + max(0, 1.9 * (1 - abs(t - 0.5) / 0.18));
+
+// A true continuous swept mesh. Unlike adjacent sphere hulls, this produces
+// no conical section boundaries along the arm.
+module smooth_arm_tube(s, palm_y, steps = 28, sides = 28) {
+  centers = [for (i = [0 : steps]) arm_center(s, i / steps, palm_y)];
+  tangents = [
+    for (i = [0 : steps])
+      unit(i == 0
+        ? centers[1] - centers[0]
+        : i == steps
+          ? centers[steps] - centers[steps - 1]
+          : centers[i + 1] - centers[i - 1])
   ];
-  rads = [5.6, 6.0, 5.2, 4.2, 3.6, 3.2];
+  normals = [for (t = tangents) unit(cross(t, [0, 0, 1]))];
+  binormals = [for (i = [0 : steps]) unit(cross(normals[i], tangents[i]))];
+
+  ring_vertices = [
+    for (i = [0 : steps])
+      for (j = [0 : sides - 1])
+        let(a = 360 * j / sides,
+            r = arm_radius(i / steps))
+          centers[i] + r * (cos(a) * normals[i] + sin(a) * binormals[i])
+  ];
+  start_center = len(ring_vertices);
+  end_center = start_center + 1;
+  side_faces = [
+    for (i = [0 : steps - 1])
+      for (j = [0 : sides - 1])
+        each [
+          [i * sides + j,
+           i * sides + (j + 1) % sides,
+           (i + 1) * sides + (j + 1) % sides],
+          [i * sides + j,
+           (i + 1) * sides + (j + 1) % sides,
+           (i + 1) * sides + j]
+        ]
+  ];
+  cap_faces = concat(
+    [for (j = [0 : sides - 1]) [start_center, (j + 1) % sides, j]],
+    [for (j = [0 : sides - 1])
+      [end_center, steps * sides + j, steps * sides + (j + 1) % sides]]
+  );
+
+  polyhedron(points = concat(ring_vertices, [centers[0], centers[steps]]),
+             faces = concat(side_faces, cap_faces),
+             convexity = 12);
+}
+
+// Smooth Catmull-Rom body profile sampled densely before rotate_extrude.
+// [radius, z] pairs; no planar front/back/side surfaces exist in this body.
+body_profile = [
+  [10.000,-5.000],[11.312,-4.585],[13.055,-4.086],[15.130,-3.497],
+  [17.438,-2.812],[19.878,-2.026],[22.352,-1.133],[24.759,-0.126],
+  [27.000,1.000],[29.180,2.235],[31.438,3.570],[33.727,5.011],
+  [36.000,6.562],[38.211,8.231],[40.312,10.023],[42.258,11.944],
+  [44.000,14.000],[45.542,16.201],[46.930,18.547],[48.181,21.025],
+  [49.312,23.625],[50.343,26.334],[51.289,29.141],[52.169,32.033],
+  [53.000,35.000],[53.794,38.122],[54.539,41.445],[55.218,44.905],
+  [55.812,48.438],[56.306,51.978],[56.680,55.461],[56.917,58.823],
+  [57.000,62.000],[56.903,65.003],[56.633,67.898],[56.218,70.704],
+  [55.688,73.438],[55.071,76.116],[54.398,78.758],[53.698,81.380],
+  [53.000,84.000],[52.289,86.657],[51.531,89.352],[50.727,92.042],
+  [49.875,94.688],[48.977,97.247],[48.031,99.680],[47.039,101.944],
+  [46.000,104.000],[44.935,105.826],[43.852,107.453],[42.733,108.916],
+  [41.562,110.250],[40.321,111.490],[38.992,112.672],[37.558,113.830],
+  [36.000,115.000],[34.314,116.178],[32.516,117.328],[30.615,118.439],
+  [28.625,119.500],[26.557,120.498],[24.422,121.422],[22.232,122.260],
+  [20.000,123.000],[17.555,123.635],[14.812,124.172],[11.914,124.623],
+  [9.000,125.000],[6.211,125.314],[3.688,125.578],[1.570,125.803],
+  [0.000,126.000]
+];
+
+// ============================================================
+// Organic character volumes
+module torso_outer() {
+  // One continuous surface of revolution, then gently flattened front/back.
+  // This gives a low round belly and narrow shoulders with continuous curvature.
+  translate([0, 2, 0])
+    scale([1, 0.74, 1])
+      rotate_extrude(convexity = 10, $fn = 128)
+        polygon(points = concat([[0, -5]], body_profile));
+}
+
+module torso_inner() {
+  // Scaled organic core. Pushed closer to 1.0 to thin the belly shell from
+  // ~4 mm to ~2.8 mm (large print-time/material save) while extremities stay
+  // >=1.5 mm. wall_check must remain empty (electronics + 2.4 mm still fit).
+  translate([0, 2, 62])
+    scale([0.95, 0.935, 0.95])
+      translate([0, -2, -62]) torso_outer();
+}
+
+module electronics_cavity(extra = 0) {
+  translate([0, 2, cavity_z])
+    rounded_box([cavity_w + 2 * extra,
+                 cavity_d + 2 * extra,
+                 cavity_h + 2 * extra],
+                4 + extra);
+}
+
+module esp32_bay(extra = 0) {
+  // Vertical lower-belly bay. PCB long axis follows Z, with the two Type-C
+  // connectors on the short edge pointing straight down between the feet.
+  translate([0, esp_plane_y, 27])
+    rounded_box([32 + 2 * extra, 10 + 2 * extra, 64 + 2 * extra], 2 + extra);
+}
+
+module all_electronics_clearance(extra = 0) {
   union() {
-    // 圆形安装脚(匹配圆形手臂根部, 插入盒壁圆形凹座; 榫深foot_recess + 凸出foot_out)
-    translate([(s > 0) ? out_w - foot_recess : -foot_out, yb, foot_cz])
-      rotate([0, 90, 0]) cylinder(h = foot_recess + foot_out, d = socket_d - 0.6, $fn = $fn_arm);
-    limb(pts, rads);
-    hand([rx - s*31, yb + yo, 40], 6, s);      // 手掌轻搭盖顶(右x≈35 左x≈31, 中心相扣)
+    electronics_cavity(extra);
+    esp32_bay(extra);
   }
 }
 
-// ============================================================
-module tray() {
-  difference() {
-    // 盒体：主体 + 顶沿内收倒角(柔化硬边, 含蓄有机感)
-    union() {
-      linear_extrude(tray_h - top_chamf) rrect(out_w, out_l, corner_r);
-      translate([out_w/2, out_l/2, tray_h - top_chamf])
-        linear_extrude(top_chamf,
-                       scale = [(out_w - 2*top_chamf)/out_w, (out_l - 2*top_chamf)/out_l])
-          translate([-out_w/2, -out_l/2]) rrect(out_w, out_l, corner_r);
-    }
-    // 内腔
-    translate([wall, wall, floor_t])
-      linear_extrude(in_h + 1) rrect(in_w, in_l, corner_r - wall);
-    // 端墙两个 Type-C 独立孔
-    for (dx = [-usb_center_spacing/2, usb_center_spacing/2])
-      translate([out_w/2 + dx - usb_port_w/2, -1, usb_center_z - usb_port_h/2])
-        cube([usb_port_w, wall + 2, usb_port_h]);
-    // 侧墙出线孔 ×2 (GSR电极线 + 马达线), 抬高避开面包板
-    for (dy = [0, wire_hole_gap])
-      translate([-1, wire_hole_y + dy, wire_hole_z])
-        rotate([0, 90, 0]) cylinder(h = wall + 2, d = wire_hole_d);
-    // 两长边 手臂圆形安装脚定位凹座(圆对圆自对位, 匹配圆手臂根)
-    for (s = [1, -1])
-      translate([(s > 0) ? out_w - foot_recess : 0, embrace_y, foot_cz])
-        rotate([0, 90, 0]) cylinder(h = foot_recess + 0.02, d = socket_d, $fn = $fn_arm);
+module head_outer() {
+  union() {
+    // Faceless and earless: identity comes entirely from the embrace gesture.
+    ellipsoid([0, 0, 134], [19, 16, 14.5]);
+    ellipsoid([0, 0, 121.5], [8.5, 8.5, 6], 40);
   }
 }
 
-// ============================================================
-module lid() {
-  lip_h = 6;
-  difference() {
-    union() {
-      linear_extrude(lid_t) rrect(out_w, out_l, corner_r);
-      // 下沉定位唇
-      translate([wall + tol/2, wall + tol/2, -lip_h])
-        linear_extrude(lip_h) rrect(in_w - tol, in_l - tol, corner_r - wall);
-    }
+module head() {
+  head_outer();
+}
 
-    // ---- MAX30102 工字托盘：中间托起板身，两侧排针通槽 ----
-    // 定位浅槽(从盖顶下沉，板嵌入，传感器朝上供手指按)
-    translate([out_w/2 - (max_bw + 1.5)/2, max_pos_from_end - (max_bl + 1.5)/2, lid_t - max_recess_d])
-      linear_extrude(max_recess_d + 1) rrect(max_bw + 1.5, max_bl + 1.5, 1.5);
-    // 两侧排针下沉通槽(工字：中间支撑柱 max_bridge_w, 两侧到板边的通槽)
-    // 每侧槽宽 = (总开口 - 中柱)/2, 位于两侧边缘
-    for (side = [-1, 1]) {
-      sw = (max_open_w - max_bridge_w) / 2;
-      cx = side * (max_bridge_w/2 + sw/2);      // 该侧槽中心 x(相对盖中心)
-      translate([out_w/2 + cx - sw/2, max_pos_from_end - max_slot_l/2, -lip_h - 1])
-        cube([sw, max_slot_l, lid_t + lip_h + 2]);
-    }
+module head_inner() {
+  ellipsoid([0, -1, 134], [16, 13, 11.5]);
+}
 
-    // ---- MPU6050 单边L横槽：定位浅槽 + 一条边排针通槽 ----
-    // 定位浅槽
-    translate([out_w/2 - (mpu_bw + 1.5)/2, mpu_pos_from_end - (mpu_bl + 1.5)/2, lid_t - mpu_recess_d])
-      linear_extrude(mpu_recess_d + 1) rrect(mpu_bw + 1.5, mpu_bl + 1.5, 1.5);
-    // 单边排针通槽(L：仅一条边穿透)
-    translate([out_w/2 + mpu_edge_off - mpu_slot_w/2, mpu_pos_from_end - mpu_slot_l/2, -lip_h - 1])
-      cube([mpu_slot_w, mpu_slot_l, lid_t + lip_h + 2]);
-
-    // 刻字
-    if (engrave) {
-      // 左上角 logo 两行
-      translate([logo_x, logo_y + logo_size*0.75, lid_t - engrave_depth])
-        linear_extrude(engrave_depth + 0.1)
-          text(logo_l1, size = logo_size, font = font_cn, halign = "left", valign = "center");
-      translate([logo_x, logo_y - logo_size*0.75, lid_t - engrave_depth])
-        linear_extrude(engrave_depth + 0.1)
-          text(logo_l2, size = logo_size, font = font_cn, halign = "left", valign = "center");
-
-      // 中部 hero「环抱你」
-      translate([out_w/2, hero_y, lid_t - engrave_depth])
-        linear_extrude(engrave_depth + 0.1)
-          text(hero_txt, size = hero_size, font = font_cn, halign = "center", valign = "center");
-
-      // 环抱浅圈(呼应“环抱”)
-      if (hero_ring)
-        translate([out_w/2, hero_y, lid_t - engrave_depth])
-          linear_extrude(engrave_depth + 0.1)
-            difference() {
-              circle(r = hero_ring_r);
-              circle(r = hero_ring_r - hero_ring_w);
-            }
-    }
+module arm(s) {
+  // The round shoulder starts in the narrow upper body. A distinct spherical
+  // elbow turns the forearm inward, forming a true C-shaped side silhouette.
+  belly_front_at_palm = 32;
+  palm_y = belly_front_at_palm + hand_clearance + 10.5;
+  union() {
+    smooth_arm_tube(s, palm_y);
+    // Hidden shoulder peg takes the load when a hand presses into the hug.
+    translate([s * 38, 10, 98])
+      rotate([90, 0, 0]) cylinder(h = 12, d = 7.4, $fn = 40);
+    // Palms remain at the user's left/right hand edges, leaving the sensor
+    // and central palm area unobstructed. Thumb sits on the upper-inner side.
+    ellipsoid([s * 36, palm_y + 1, 73], [11, 10, 10.5], $fn_arm);
+    ellipsoid([s * 28.5, palm_y + 2, 78], [5.2, 5, 5.8], 48);
   }
 }
 
-// ============================================================
-// 装配预览：盒 + 盖(在顶) + 双臂环抱
-module assembled() {
-  color("#FAF9F7") tray();
-  color("#FAF9F7") translate([0, 0, tray_h]) lid();
-  color("#D4B8A5") { arm(1); arm(-1); }
+module arms() {
+  arm(-1);
+  arm(1);
 }
 
-// 手臂平躺(侧卧)以便无支撑打印：绕X转90°后落到床面
-module arm_flat(s) {
-  translate([0, 39, -78.8]) rotate([90, 0, 0]) arm(s);
+module feet() {
+  // Wide stance leaves the two underside Type-C openings unobstructed.
+  ellipsoid([-30, 5, 5], [17, 22, 10], 48);
+  ellipsoid([ 30, 5, 5], [17, 22, 10], 48);
 }
 
-// 打印排版(单板一次打完, 全部落在 z=0 床面, 零件间留≥18mm 间距防粘连)
-// 盒体正放(开口朝上) + 盖子翻面(顶面朝下,唇朝上) + 两臂侧躺
-module print_layout() {
-  tray();                                                    // x[0,66]   y[0,176]
-  translate([86, out_l, lid_t]) rotate([180, 0, 0]) lid();   // x[86,152] y[0,176] (距盒20)
-  translate([139, 5, 0])  arm_flat(1);                       // x[170,215] y[0,40]  (距盖18)
-  translate([180, 60, 0]) arm_flat(-1);                      // x[170,215] y[55,96] (距右臂15)
+module character_core_outer() {
+  union() {
+    torso_outer();
+    head();
+    feet();
+  }
 }
 
-// ============================================================
-if      (show == "tray")      tray();
-else if (show == "lid")       lid();
-else if (show == "arm")       arm(1);
-else if (show == "arm_l")     arm(-1);
-else if (show == "arms")      { arm(1); arm(-1); }
-else if (show == "assembled") assembled();
-else if (show == "section")
-  // 在 embrace 平面切薄片, 验证 脚↔浅槽 / 手↔盖 配合
+module character_solid() {
+  union() {
+    torso_outer();
+    head();
+    arms();
+    feet();
+  }
+}
+
+// Front sensor boss: a flat platform proud of the curved belly. Its outer
+// face sits at max_face_y so the MAX30102 seats square, not on a curve.
+module sensor_pads() {
+  translate([0, max_face_y - 5, max_z])
+    rounded_box([24, 10, 28], 3.5);
+}
+
+module max30102_cuts() {
+  // Board seat recess (1.2 mm deep from the flat boss face).
+  translate([0, max_face_y - max_recess_d / 2 + 0.01, max_z])
+    rounded_box([max_bw + 2, max_recess_d + 0.02, max_bl + 2], 0.8);
+
+  // 工-shape: two slots + 4.5 mm central support bridge. Each slot runs from
+  // the boss face all the way through the shell into the hollow interior so
+  // the pins/underside clear cleanly (previously capped ~1.4 mm short).
+  sw = (max_open_w - max_bridge_w) / 2;
+  for (side = [-1, 1]) {
+    cx = side * (max_bridge_w / 2 + sw / 2);
+    translate([cx, max_face_y - 13, max_z])   // y: 45 -> 19, full penetration
+      cube([sw, 26, max_slot_l], center = true);
+  }
+}
+
+module mpu6050_back_cuts() {
+  // Board seat recess on the back boss face.
+  translate([0, mpu_face_y + mpu_recess_d / 2 - 0.01, mpu_z])
+    rounded_box([mpu_bw + 2, mpu_recess_d + 0.02, mpu_bl + 2], 0.8);
+
+  // 一字: a single straight slot along the pin-header edge, penetrating the
+  // boss face through the shell into the hollow interior.
+  translate([mpu_edge_off, mpu_face_y + 13, mpu_z])  // y: -39 -> -13
+    cube([mpu_slot_w, 26, mpu_slot_l], center = true);
+}
+
+module front_function_cuts() {
+  max30102_cuts();
+  usb_cuts();
+}
+
+module back_sensor_pad() {
+  translate([0, mpu_face_y + 5, mpu_z])
+    rounded_box([25, 10, 29], 3.5);
+}
+
+module usb_cuts() {
+  // True underside access. Port width runs along X, height along Y.
+  for (dx = [-usb_center_spacing / 2, usb_center_spacing / 2])
+    translate([dx, esp_plane_y, usb_center_z])
+      cube([usb_port_w, usb_port_h, 18], center = true);
+}
+
+module wire_cuts() {
+  for (dx = [-wire_hole_gap / 2, wire_hole_gap / 2])
+    translate([dx, -44, wire_hole_z])
+      rotate([-90, 0, 0]) cylinder(h = 28, d = wire_hole_d, $fn = 36);
+}
+
+module back_function_cuts() {
+  wire_cuts();
+  mpu6050_back_cuts();
+}
+
+module breadboard_guides() {
+  // 56.4 mm clear width; breadboard back rests against the rear shell.
+  for (x = [-29.45, 29.45])
+    translate([x, -25.0, cavity_z]) cube([2.5, 26.6, 86], center = true);
+  translate([0, -25.0, 16.8]) cube([57.8, 26.6, 2.5], center = true);
+}
+
+module esp32_guides() {
+  // Two side rails + top stop for a 27.9 x 57.2 mm vertical PCB.
+  for (x = [-esp_board_w / 2 - 1.4, esp_board_w / 2 + 1.4])
+    translate([x, 23.0, 30])
+      cube([2.4, 33, 60], center = true);
+  translate([0, 23.0, 60.2])
+    cube([esp_board_w + 5, 33, 2.4], center = true);
+}
+
+module breadboard_guides_inside_body() {
+  // Guide stock may be rectangular for reliable printing, but none of it is
+  // allowed to break through the character's continuous outer surface.
   intersection() {
-    assembled();
-    translate([-20, embrace_y - 3, -12]) cube([130, 6, 80]);
+    breadboard_guides();
+    torso_outer();
   }
-else if (show == "print")     print_layout();
-else { tray(); translate([out_w + 15, 0, 0]) lid(); }
+}
+
+module esp32_guides_inside_body() {
+  intersection() {
+    esp32_guides();
+    torso_outer();
+  }
+}
+
+// ============================================================
+// Two torso shell halves: the seam follows the body's side profile at y=0.
+module torso_hollow() {
+  difference() {
+    character_core_outer();
+    torso_inner();
+    head_inner();
+  }
+}
+
+module body_front_raw() {
+  intersection() {
+    union() {
+      torso_hollow();
+      sensor_pads();
+      esp32_guides_inside_body();
+    }
+    translate([-90, 0, -10]) cube([180, 90, 180]);
+  }
+}
+
+module body_back_raw() {
+  intersection() {
+    union() {
+      torso_hollow();
+      back_sensor_pad();
+    }
+    translate([-90, -90, -10]) cube([180, 90, 180]);
+  }
+}
+
+// Alignment posts are outside the electronics envelope.
+module alignment_posts() {
+  for (x = [-35, 35])
+    for (z = [35, 88])
+      union() {
+        // A narrow radial rib ties the snap to the rear organic shell.  The
+        // rib sits outside the 62 mm electronics envelope, so it adds snap
+        // strength without filling the useful cavity again.
+        hull() {
+          translate([x, -26.0, z]) sphere(d = 5.5, $fn = 28);
+          translate([x,  -1.8, z]) sphere(d = 5.5, $fn = 28);
+        }
+        translate([x, -1.8, z])
+          rotate([-90, 0, 0]) cylinder(h = 3.7, d = 4.6, $fn = 36);
+        translate([x, 2.0, z]) sphere(d = 5.8, $fn = 40);
+      }
+}
+
+module alignment_holes() {
+  for (x = [-35, 35])
+    for (z = [35, 88])
+      union() {
+        // Narrow mouth flexes as the 5.8 mm ball passes, then retains it.
+        translate([x, 1.1, z])
+          rotate([90, 0, 0]) cylinder(h = 3.2, d = 5.0, $fn = 36);
+        translate([x, 2.0, z]) sphere(d = 6.2 + fit_tol, $fn = 40);
+        // Relief slots let the surrounding PLA deflect instead of cracking.
+        for (dx = [-3.7, 3.7])
+          translate([x + dx, 0, z - 4]) cube([0.8, 7, 8]);
+      }
+}
+
+module arm_socket_holes() {
+  for (s = [-1, 1])
+    translate([s * 38, 11, 98])
+      rotate([90, 0, 0]) cylinder(h = 14, d = 7.4 + fit_tol * 2, $fn = 40);
+}
+
+module engrave_text() {
+  // 「环抱你」 debossed on the lower-front chest, below the MAX30102 boss.
+  // Extrudes from just outside the belly surface inward (-Y) so the cut depth
+  // stays even across the mild curvature. Fill with a paint pen for colour.
+  translate([0, 46, 52])
+    rotate([90, 0, 0])
+      linear_extrude(height = 5)
+        mirror([1, 0, 0])
+          text("环抱你", size = 5.5, font = "Heiti SC",
+               halign = "center", valign = "center", spacing = 1.05);
+}
+
+module body_front() {
+  difference() {
+    body_front_raw();
+    alignment_holes();
+    arm_socket_holes();
+    front_function_cuts();
+    engrave_text();
+  }
+}
+
+module body_back() {
+  difference() {
+    union() {
+      body_back_raw();
+      alignment_posts();
+      breadboard_guides_inside_body();
+    }
+    back_function_cuts();
+  }
+}
+
+// ============================================================
+// Preview / first-stage verification
+module assembled() {
+  color("#F8F7F2") body_front();
+  color("#ECEBE6") body_back();
+  color("#F5F3ED") arms();
+}
+
+module cavity_check() {
+  color("#F8F7F2", 0.55) torso_outer();
+  color("#6BAA75") all_electronics_clearance();
+}
+
+module wall_check() {
+  // Any output means a functional clearance does not fit inside the new
+  // organic hollow core (ignoring the intentional underside USB opening).
+  intersection() {
+    difference() {
+      all_electronics_clearance(wall);
+      torso_inner();
+    }
+    translate([-100, -100, 5]) cube([200, 200, 195]);
+  }
+}
+
+module palm_mock() {
+  // Average palm proxy used only to verify the hug gap; not a printed part.
+  color("#D8B49A", 0.75)
+    translate([0, 51, 70]) rounded_box([56, 20, 62], 9);
+}
+
+module grip_check() {
+  assembled();
+  palm_mock();
+}
+
+module arm_print(s) {
+  if (s > 0)
+    translate([-58, 8, 75]) rotate([0, 90, 0]) arm(s);
+  else
+    translate([99, 8, 75]) rotate([0, -90, 0]) arm(s);
+}
+
+module print_layout() {
+  translate([3, 0, 0]) {
+    // Both shell halves lie on their flat seam planes.
+    translate([55, 150, 0]) rotate([90, 0, 0]) body_front();
+    translate([172, 5, 4.9]) rotate([-90, 0, 0]) body_back();
+    // Curved arms lie on their broad side and need only local support.
+    translate([10, 160, 0]) arm_print(1);
+    translate([75, 160, 0]) arm_print(-1);
+  }
+}
+
+if      (show == "assembled")    assembled();
+else if (show == "solid")        character_solid();
+else if (show == "body_front")   body_front();
+else if (show == "body_back")    body_back();
+else if (show == "lid")          body_front(); // legacy filename alias
+else if (show == "tray")         body_back();  // legacy filename alias
+else if (show == "head")         head();
+else if (show == "arm")          arm(1);
+else if (show == "arm_l")        arm(-1);
+else if (show == "arms")         arms();
+else if (show == "feet")         feet();
+else if (show == "cavity")       electronics_cavity();
+else if (show == "cavity_check") cavity_check();
+else if (show == "wall_check")   wall_check();
+else if (show == "grip_check")   grip_check();
+else if (show == "print")        print_layout();
+else assembled();

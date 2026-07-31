@@ -66,21 +66,21 @@
   function showEmpty() {
     const mood = deriveMood();
     document.getElementById('ptBody').innerHTML = `
-      <div class="pt-canvas card pt-empty">
-        <div class="pt-em">❋</div>
-        <div class="pt-hint">把今天的情绪，炼成一幅只属于你的画</div>
-        <div class="pt-mood muted">${mood.moodSummary}</div>
+      <div class="pt-intro card">
+        <span class="pt-em">❋</span>
+        <div class="pt-intro-txt">
+          <div class="pt-hint">把今天的情绪，炼成一幅只属于你的画</div>
+          <div class="pt-mood muted">${mood.moodSummary}</div>
+        </div>
       </div>
 
-      <div class="pt-picker card">
-        <div class="pt-picker-title">戒指记录了今天的<b>波动</b>，再选几种此刻的心情<br>
-          <span class="muted">让画像的颜色更贴合你（可选，可多选）</span>
-        </div>
+      <div class="pt-picker">
+        <div class="pt-picker-title">再选几种此刻的心情，让颜色更贴合你 <span class="muted">（可多选）</span></div>
         <div class="pt-chips" id="ptChips"></div>
       </div>
 
-      <button id="ptGen" style="width:100%;margin-top:16px">生成今日画像</button>
-      <div class="pt-note muted">用 gpt-image-2 生成 · 需先在 ⚙︎ 设置里填官方 API</div>
+      <button id="ptGen" class="pt-gen">生成今日画像</button>
+      <div class="pt-note muted">gpt-image-2 生成 · 需先在 ⚙︎ 填官方 API</div>
     `;
     renderChips();
     document.getElementById('ptGen').onclick = generate;
@@ -114,8 +114,11 @@
     const mood = deriveMood();
 
     btn.disabled = true;
-    document.getElementById('ptBody').querySelector('.pt-canvas').innerHTML =
-      `<div class="pt-loading"><div class="pt-spin"></div><div class="muted">正在为你炼一幅画…（约 10-30 秒）</div></div>`;
+    // ③ 用当天色板铺一张柔光渐变占位图，等待不再是空白转圈——像"画正在显影"
+    document.getElementById('ptBody').innerHTML =
+      `<div class="pt-canvas card pt-canvas-loading" style="background:${paletteGradient(mood.palette)}">
+         <div class="pt-loading"><div class="pt-spin"></div><div class="muted">正在为你炼一幅画…</div></div>
+       </div>`;
 
     try {
       AI.loadFromStore();
@@ -125,20 +128,20 @@
         arousal: mood.arousal,
         moodSummary: mood.moodSummary,
       });
-      const imgUrl = await AI.image(prompt, { size: '1024x1024' });
+
+      // ④ 图片与短诗并行请求：总时长 = 较慢的那个，而不是二者相加
+      // 注：size 用 AI.image 默认的 1024x1024（gpt-image-2 不接受 512，会 400）
+      const imgP = AI.image(prompt);
+      const poemP = AI.chat([
+        { role: 'system', content: '你是"小知"，一个高敏感、克制、诗意的陪伴者。请把用户今天的情绪，写成一首短诗，来映照这幅由TA情绪生成的抽象画。要求：4-6 行；每行一句、简短克制（每行尽量不超过 14 字）；行与行之间用换行符分隔；不要标题、不要引号、不要解释说明、不要报数据。诚实地贴着TA真实的情绪去写——如果今天是沉、是累、是孤独、是愤怒，就让诗也有那个重量与真实，不要强行转折成温暖或希望，不要说教安慰。只写出那份被看见的共鸣本身。只输出诗句。' },
+        { role: 'user', content: `今天的情绪：${mood.moodSummary}。请为这幅画写一首诚实映照这份心情的小诗。` },
+      ], { maxTokens: 220 }).catch(() => '');   // 诗失败不拖累图，落本地兜底
+
+      const [imgUrl, poemOut] = await Promise.all([imgP, poemP]);
       if (!imgUrl) throw new Error('未返回图片');
 
-      // 解读文字（小知口吻，分行短诗）：诚实共鸣真实情绪，不急着安慰美化
-      let interpretation = '';
-      try {
-        const out = await AI.chat([
-          { role: 'system', content: '你是"小知"，一个高敏感、克制、诗意的陪伴者。请把用户今天的情绪，写成一首短诗，来映照这幅由TA情绪生成的抽象画。要求：4-6 行；每行一句、简短克制（每行尽量不超过 14 字）；行与行之间用换行符分隔；不要标题、不要引号、不要解释说明、不要报数据。诚实地贴着TA真实的情绪去写——如果今天是沉、是累、是孤独、是愤怒，就让诗也有那个重量与真实，不要强行转折成温暖或希望，不要说教安慰。只写出那份被看见的共鸣本身。只输出诗句。' },
-          { role: 'user', content: `今天的情绪：${mood.moodSummary}。请为这幅画写一首诚实映照这份心情的小诗。` },
-        ], { maxTokens: 220 });
-        if (out && out.trim()) interpretation = out.trim();
-      } catch (e) { /* 落到下方本地兜底 */ }
       // AI 没出诗（模型不可用/返回空）时，用按情绪拼的本地兜底诗，而不是把数据概述当诗
-      if (!interpretation) interpretation = fallbackPoem(mood);
+      let interpretation = (poemOut && poemOut.trim()) ? poemOut.trim() : fallbackPoem(mood);
 
       // 图片存 IndexedDB（~1-2MB base64 会撑爆 localStorage），localStorage 只留 imgKey 引用
       const imgKey = 'pt-' + Store._uid();
@@ -255,27 +258,54 @@
     return `${y}年${m}月${day}日`;
   }
 
+  // 用当天色板拼一张柔和径向渐变，作生成时的占位底（越像最终画，等待越安心）
+  function paletteGradient(palette) {
+    const cs = (palette && palette.length ? palette : ['#E8D6C7', '#D4B8A5']).slice(0, 4);
+    if (cs.length === 1) return `radial-gradient(120% 120% at 30% 25%, ${cs[0]}, var(--accent-soft))`;
+    const spots = [
+      `radial-gradient(90% 90% at 25% 20%, ${cs[0]}, transparent 62%)`,
+      `radial-gradient(85% 85% at 80% 30%, ${cs[1] || cs[0]}, transparent 60%)`,
+      cs[2] && `radial-gradient(90% 90% at 70% 85%, ${cs[2]}, transparent 62%)`,
+      cs[3] && `radial-gradient(80% 80% at 20% 80%, ${cs[3]}, transparent 60%)`,
+    ].filter(Boolean);
+    return spots.join(',') + `, ${cs[0]}`;
+  }
+
   function injectStyle() {
     if (document.getElementById('pt-style')) return;
     const s = document.createElement('style');
     s.id = 'pt-style';
     s.textContent = `
-      .pt-wrap{display:flex;flex-direction:column;gap:14px;}
-      .pt-head{text-align:center;}
-      .pt-date{font-size:13px;color:var(--sub);}
-      .pt-title{font-size:20px;font-weight:700;margin-top:2px;}
-      .pt-canvas{padding:0;overflow:hidden;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;}
-      .pt-img{width:100%;height:100%;object-fit:cover;display:block;}
-      .pt-empty{flex-direction:column;gap:10px;text-align:center;padding:40px 24px;}
-      .pt-em{font-size:46px;color:var(--accent);}
-      .pt-hint{font-size:15px;font-weight:600;}
-      .pt-mood{font-size:13px;line-height:1.6;}
-      .pt-note{font-size:12px;text-align:center;margin-top:8px;}
-      .pt-picker{padding:16px 16px 18px;}
-      .pt-picker-title{font-size:13px;line-height:1.7;margin-bottom:12px;text-align:center;}
+      /* 整页填满固定屏，不滚动 */
+      .pt-wrap{display:flex;flex-direction:column;gap:12px;height:100%;min-height:0;}
+      #ptBody{flex:1;min-height:0;display:flex;flex-direction:column;}
+      .pt-head{text-align:center;flex:none;}
+      .pt-date{font-size:12px;color:var(--sub);}
+      .pt-title{font-family:var(--font-serif);font-size:19px;font-weight:600;letter-spacing:1px;margin-top:1px;}
+      /* 结果态：画保持正方形、不拉伸；在剩余空间内自适应，画占多大位置就占多大 */
+      .pt-canvas{padding:0;background:transparent;box-shadow:none;overflow:visible;
+        flex:1;min-height:0;display:flex;align-items:center;justify-content:center;}
+      .pt-img{max-width:100%;max-height:100%;width:auto;height:auto;aspect-ratio:1/1;object-fit:cover;
+        display:block;border-radius:var(--radius);box-shadow:var(--shadow);animation:ptFadeIn 1s var(--ease-calm);}
+      @keyframes ptFadeIn{from{opacity:0;transform:scale(1.02)}to{opacity:1;transform:scale(1)}}
+      /* 生成中的色板渐变占位：柔和呼吸，像画在慢慢显影 */
+      .pt-canvas-loading{aspect-ratio:1/1;flex:none;border-radius:var(--radius);
+        animation:breathe 6s var(--ease-calm) infinite;}
+      .pt-canvas-loading .pt-loading .muted{color:rgba(58,53,47,.6);}
+      /* 空状态：介绍卡为主视觉——放大、近正方形、内容居中，吃掉多余留白 */
+      .pt-intro{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:16px;padding:28px 26px;text-align:center;}
+      .pt-intro .pt-em{font-size:64px;line-height:1;color:var(--accent);flex:none;}
+      .pt-hint{font-size:16px;font-weight:600;line-height:1.5;}
+      .pt-mood{font-size:13px;line-height:1.7;margin-top:2px;max-width:22em;}
+      .pt-note{font-size:11px;text-align:center;margin-top:8px;flex:none;}
+      .pt-gen{width:100%;margin-top:14px;flex:none;}
+      .pt-picker{padding:2px 2px;flex:none;}
+      .pt-palette,.pt-emotags{flex:none;}
+      .pt-picker-title{font-size:13px;line-height:1.6;margin-bottom:12px;text-align:center;}
       .pt-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
       .pt-chip{background:var(--surface);color:var(--ink);border:1.5px solid var(--line);
-        border-radius:999px;padding:7px 13px;font-size:13px;display:flex;align-items:center;gap:6px;}
+        border-radius:999px;padding:7px 13px;font-size:13px;display:flex;align-items:center;gap:6px;box-shadow:var(--shadow-soft);}
       .pt-chip .pt-chip-dot{width:10px;height:10px;border-radius:50%;background:var(--c);}
       .pt-chip.on{background:var(--cl);border-color:var(--c);color:var(--ink);font-weight:600;}
       .pt-emotags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
@@ -285,12 +315,12 @@
       @keyframes ptSpin{to{transform:rotate(360deg)}}
       .pt-palette{display:flex;gap:8px;justify-content:center;}
       .pt-sw{width:28px;height:28px;border-radius:50%;box-shadow:var(--shadow);}
-      .pt-interp{position:relative;text-align:center;padding:30px 24px 26px;}
-      .pt-quote{position:absolute;top:6px;left:18px;font-size:44px;line-height:1;color:var(--accent);opacity:.35;
+      .pt-interp{position:relative;text-align:center;padding:16px 22px 14px;flex:none;}
+      .pt-quote{position:absolute;top:2px;left:16px;font-size:34px;line-height:1;color:var(--accent);opacity:.35;
         font-family:Georgia,"Songti SC",serif;}
-      .pt-poem{display:flex;flex-direction:column;gap:12px;
+      .pt-poem{display:flex;flex-direction:column;gap:5px;
         font-family:"STKaiti","Kaiti SC","KaiTi","楷体","Songti SC",serif;}
-      .pt-line{font-size:17px;line-height:1.9;letter-spacing:2px;color:var(--ink);}
+      .pt-line{font-size:14px;line-height:1.6;letter-spacing:1.5px;color:var(--ink);}
     `;
     document.head.appendChild(s);
   }

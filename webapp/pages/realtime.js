@@ -112,16 +112,16 @@
         </div>
 
         <div class="rt-actions">
-          <button id="rtConnect">连接戒指</button>
+          <button id="rtConnect">连接伙伴</button>
           <button class="ghost" id="rtStress">模拟一次压力</button>
         </div>
 
         <div class="rt-haptics card">
           <div class="rt-tl-title">测试三档干预触觉</div>
           <div class="rt-haptic-btns">
-            <button class="ghost" data-mode="intercept">档三·拦截<small>轻促短震</small></button>
+            <button class="ghost" data-mode="intercept">档一·拦截<small>轻促短震</small></button>
             <button class="ghost" data-mode="anchor">档二·锚点<small>呼吸 吸4·呼6</small></button>
-            <button class="ghost" data-mode="retreat">档一·撤退<small>两下长震</small></button>
+            <button class="ghost" data-mode="retreat">档三·撤退<small>两下长震</small></button>
           </div>
         </div>
 
@@ -178,9 +178,9 @@
 
     // 三档触觉手动测试：直接发对应档位指令（连接后可试真戒指的震动手感）
     const LABELS = {
-      intercept: '· 档三·拦截：轻促短震',
+      intercept: '· 档一·拦截：轻促短震',
       anchor:    '🌬️ 档二·锚点：跟着呼吸（吸4·呼6）',
-      retreat:   '🫂 档一·撤退：你可以停下来了',
+      retreat:   '🫂 档三·撤退：你可以停下来了',
     };
     el.querySelectorAll('.rt-haptic-btns button').forEach(b => {
       b.onclick = () => {
@@ -218,7 +218,7 @@
     if (s === 'baseline')  { bHr = []; bHrv = []; bGsr = []; base.ready = false; }
     if (s === 'disconnected' || s === 'idle') {
       monitoring = false;
-      if (btnC) btnC.textContent = '连接戒指';
+      if (btnC) btnC.textContent = '连接伙伴';
       setLevelUI('low'); const hr = el && el.querySelector('#rtHr'); if (hr) hr.textContent = '--';
       const lv = el && el.querySelector('#rtLevel'); if (lv) lv.textContent = '已断开';
     }
@@ -261,14 +261,14 @@
     const now = Date.now();
     if (level === 'high' || level === 'crit') {
       highStreak++; midStreak = 0;
-      // 连续 2 次为高 且 过冷却 → 触发环抱；3σ(crit) 直接给最强的档一·撤退
+      // 连续 2 次为高 且 过冷却 → 触发环抱；3σ(crit) 直接给最强的档三·撤退
       if (highStreak >= 2 && now > highCooldownUntil) {
         const mode = level === 'crit' ? 'retreat' : 'anchor';
         handleHighStress(d, mode);
       }
     } else if (level === 'mid') {
       midStreak++; highStreak = 0;
-      // 压力刚有苗头(1σ)：连续 2 次 且 过冷却 → 档三·早期拦截(轻提醒)
+      // 压力刚有苗头(1σ)：连续 2 次 且 过冷却 → 档一·早期拦截(轻提醒)
       if (midStreak >= 2 && now > midCooldownUntil) handleMidStress(d);
     } else {
       highStreak = 0; midStreak = 0;
@@ -292,7 +292,7 @@
     if (lv) { lv.textContent = info.label + ' · ' + info.desc; lv.style.color = info.color; }
   }
 
-  // 档二/档一：高压 → anchor(呼吸引导) 或 retreat(撤退许可)
+  // 档二/档三：高压 → anchor(呼吸引导) 或 retreat(撤退许可)
   function handleHighStress(d, mode = 'anchor') {
     highCooldownUntil = Date.now() + 20000; // 20s 冷却
     highStreak = 0;
@@ -315,7 +315,7 @@
     toast(mode === 'retreat' ? '🫂 戒指：你可以停下来了' : '🌬️ 戒指陪你呼吸（吸4·呼6）');
   }
 
-  // 档三：中压苗头 → intercept(轻促短震)，只提醒不记为"高压环抱"
+  // 档一：中压苗头 → intercept(轻促短震)，只提醒不记为"高压环抱"
   function handleMidStress(d) {
     midCooldownUntil = Date.now() + 25000; // 25s 冷却，避免频繁打扰
     midStreak = 0;
@@ -463,48 +463,49 @@
     const s = document.createElement('style');
     s.id = 'rt-style';
     s.textContent = `
-      .rt-wrap{display:flex;flex-direction:column;gap:11px;}
-      .rt-status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);justify-content:center;}
+      .rt-wrap{display:flex;flex-direction:column;gap:8px;}
+      .rt-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--sub);justify-content:center;}
       .rt-status .dot{width:7px;height:7px;border-radius:50%;background:var(--sub);}
       .rt-status .dot.monitoring{background:var(--calm);}
       .rt-status .dot.baseline,.rt-status .dot.connecting{background:var(--mid);}
       .rt-status .dot.disconnected,.rt-status .dot.unsupported{background:var(--high);}
-      .rt-ring{position:relative;display:flex;align-items:center;justify-content:center;padding:6px;box-shadow:none;background:transparent;}
+      .rt-ring{position:relative;display:flex;align-items:center;justify-content:center;padding:2px;box-shadow:none;background:transparent;}
       .rt-ring.pulse{animation:rtPulse .8s ease;}
       @keyframes rtPulse{0%{transform:scale(1)}30%{transform:scale(1.03)}100%{transform:scale(1)}}
-      .rt-svg{width:172px;height:172px;animation:breathe 8s var(--ease-calm) infinite;}
+      .rt-svg{width:142px;height:142px;animation:breathe 8s var(--ease-calm) infinite;}
       .rt-center{position:absolute;text-align:center;}
-      .rt-hr{font-size:44px;font-weight:700;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;}
+      .rt-hr{font-size:38px;font-weight:700;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;}
       .rt-unit{font-size:11px;color:var(--sub);margin-top:3px;letter-spacing:.5px;}
       .rt-level{margin-top:7px;font-size:13px;font-weight:600;}
-      .rt-meta{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-      .rt-meta-item{background:var(--surface);border-radius:var(--radius-sm);box-shadow:var(--shadow-soft);padding:9px 10px;text-align:center;}
-      .rt-meta-item .v{font-size:19px;font-weight:700;line-height:1.1;}
+      .rt-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+      .rt-meta-item{background:var(--surface);border-radius:var(--radius-sm);box-shadow:var(--shadow-soft);padding:8px 10px;text-align:center;}
+      .rt-meta-item .v{font-size:18px;font-weight:700;line-height:1.1;}
       .rt-meta-item .k{font-size:11px;color:var(--sub);margin-top:1px;}
-      .rt-meta-item .d{font-size:9px;color:var(--sub);opacity:.72;margin-top:2px;line-height:1.25;}
+      .rt-meta-item .d{font-size:9px;color:var(--sub);opacity:.72;margin-top:1px;line-height:1.2;}
       .rt-actions{display:flex;gap:10px;}
       .rt-actions button{flex:1;padding:11px 16px;font-size:14px;}
-      .rt-haptics{padding:12px 14px;}
-      .rt-haptic-btns{display:flex;gap:8px;margin-top:9px;}
+      .rt-haptics{padding:10px 14px;}
+      .rt-haptic-btns{display:flex;gap:8px;margin-top:8px;}
       .rt-haptic-btns button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;font-size:12px;font-weight:600;line-height:1.2;}
       .rt-haptic-btns button small{font-size:9px;font-weight:400;color:var(--sub);}
       .rt-tl-title{font-weight:600;font-size:14px;margin-bottom:9px;}
-      .rt-trend{padding:12px 14px;}
-      .rt-trend-svg{width:100%;height:96px;display:block;}
-      .rt-trend-legend{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;color:var(--sub);}
+      .rt-trend{padding:10px 14px;}
+      .rt-trend-svg{width:100%;height:64px;display:block;}
+      .rt-trend-legend{display:flex;gap:14px;justify-content:center;margin-top:7px;font-size:10px;color:var(--sub);}
       .rt-trend-legend span{display:flex;align-items:center;gap:5px;}
       .rt-trend-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
       .rt-trend-legend i.hi{background:#C75C4B;}
       .rt-trend-legend i.calm-band{background:var(--accent);opacity:.35;}
       .rt-trend-legend i.lo{background:#6E9E82;}
-      .rt-tl-row{display:flex;align-items:center;gap:10px;padding:7px 0;}
+      .rt-timeline{padding:12px 14px;}
+      .rt-tl-row{display:flex;align-items:center;gap:10px;padding:5px 0;}
       .rt-tl-time{font-size:12px;width:38px;flex:none;}
       .rt-tl-dot{width:8px;height:8px;border-radius:50%;flex:none;}
-      .rt-tl-text{font-size:14px;}
+      .rt-tl-text{font-size:13px;}
       .rt-tl-more{width:100%;margin-top:8px;padding:8px;background:transparent;border:none;
         color:var(--sub);font-size:13px;cursor:pointer;border-top:1px solid var(--line);}
       .rt-tl-more:active{opacity:.6;}
-      .rt-empty{text-align:center;padding:16px;font-size:13px;}
+      .rt-empty{text-align:center;padding:8px;font-size:12px;}
       #rtToast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(20px);
         background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;
         opacity:0;pointer-events:none;transition:.3s;z-index:99;max-width:80%;}

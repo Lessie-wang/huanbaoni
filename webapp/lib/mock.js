@@ -49,9 +49,9 @@
     // 三档干预触觉（见 docs/接口契约.md §1）；mock 只打印+派事件，供页面演示
     vibrate(mode = 'anchor') {
       const LABEL = {
-        intercept: '档三·早期拦截（轻促短震 ~150ms）',
+        intercept: '档一·早期拦截（轻促短震 ~150ms）',
         anchor:    '档二·实时锚点（共振呼吸 吸4·呼6 渐强渐弱 x3）',
-        retreat:   '档一·撤退许可（两下长震 长-停-长）',
+        retreat:   '档三·撤退许可（两下长震 长-停-长）',
       };
       const label = LABEL[mode] || LABEL.anchor;
       console.log('[MockRing] VIBRATE →', mode, '｜', label);
