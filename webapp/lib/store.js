@@ -11,6 +11,7 @@
     growth: 'hbn.growth',
     profile: 'hbn.profile',
     settings: 'hbn.settings',
+    trend: 'hbn.trend',
   };
 
   const _read = (k, def) => {
@@ -83,6 +84,25 @@
       return _read(K.settings, { apiBaseUrl: '', apiKey: '', useMock: true });
     },
     setSettings(s) { return _write(K.settings, Object.assign(Store.getSettings(), s)); },
+
+    // ---- 压力指数时间序列（24h 折线图数据源；realtime 写，growth 可复用）----
+    // 每条 { ts, z, level }：z 为 z-score 压力指数（可正可负），level 为分档
+    getTrend(hours = 24) {
+      const all = _read(K.trend, []);
+      if (!hours) return all;
+      const cut = Date.now() - hours * 3600e3;
+      return all.filter(s => s.ts >= cut);
+    },
+    addTrendSample(s) {
+      const all = _read(K.trend, []);
+      all.push(Object.assign({ ts: Date.now() }, s));
+      // 只保留最近 48h 且最多 4000 点，防止 localStorage 膨胀
+      const cut = Date.now() - 48 * 3600e3;
+      let trimmed = all.filter(x => x.ts >= cut);
+      if (trimmed.length > 4000) trimmed = trimmed.slice(trimmed.length - 4000);
+      _write(K.trend, trimmed);
+      return trimmed.length;
+    },
 
     // ---- 工具 ----
     _uid, _today,
