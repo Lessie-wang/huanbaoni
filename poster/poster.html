@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>环抱你 · 海报</title>
+<style>
+  :root{
+    --paper:#F6F1E9; --paper2:#EFE7DB; --cream:#FAF7F2;
+    --ink:#332E28; --ink2:#5A5248; --sub:#928A7E;
+    --gold:#B08A5A; --gold-lt:#CBA876; --gold-dk:#8E6B44;
+    --champ:#D9BFA7; --silk:#E7C6AC;
+    --calm:#9FBBA9; --mid:#E3CB93; --high:#D69A84;
+    --line:rgba(140,120,95,.22);
+    --card:rgba(255,255,255,.62);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+  html,body{background:#d9d2c7;}
+  .poster{
+    position:relative; width:1440px; height:720px; overflow:hidden;
+    font-family:"PingFang SC","Hiragino Sans GB",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(120% 90% at 18% 30%, #FBF8F3 0%, #F4EEE4 46%, #ECE2D4 100%),
+      linear-gradient(180deg,#F7F2EA,#EFE6D9);
+  }
+  /* warm blush glow behind the hero */
+  .glow-l{position:absolute;left:-140px;top:60px;width:820px;height:720px;
+    background:radial-gradient(46% 42% at 40% 46%, rgba(231,198,172,.42), rgba(231,198,172,0) 70%);
+    filter:blur(6px);pointer-events:none;}
+  .glow-r{position:absolute;right:-160px;bottom:-160px;width:640px;height:640px;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(159,187,169,.20), rgba(159,187,169,0) 70%);
+    pointer-events:none;}
+  /* paper grain */
+  .grain{position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:multiply;}
+  .vign{position:absolute;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 220px rgba(120,98,70,.14), inset 0 0 60px rgba(120,98,70,.06);}
+
+  /* ---------- top bar ---------- */
+  .top{position:absolute;left:56px;right:56px;top:40px;height:44px;
+    display:flex;align-items:center;justify-content:space-between;}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand .name{font-family:"Songti SC",serif;font-weight:700;font-size:18px;
+    letter-spacing:3px;color:var(--ink);}
+  .brand .name b{color:var(--gold-dk);font-weight:700;}
+  .kick{font:600 12.5px/1 "SF Mono","Menlo",monospace;letter-spacing:3.4px;
+    color:var(--gold-dk);display:flex;align-items:center;gap:12px;}
+  .kick .dot{width:6px;height:6px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold-lt),var(--gold-dk));}
+  .kick .tag{padding:6px 13px;border:1px solid var(--line);border-radius:20px;
+    color:var(--ink2);letter-spacing:2.6px;background:rgba(255,255,255,.4);}
+  .rule{position:absolute;left:56px;right:56px;top:98px;height:1px;
+    background:linear-gradient(90deg,transparent,var(--line) 12%,var(--line) 88%,transparent);}
+
+  /* ---------- middle grid ---------- */
+  .mid{position:absolute;left:56px;right:56px;top:110px;height:492px;
+    display:grid;grid-template-columns:496px 1fr;column-gap:52px;}
+
+  /* stage */
+  .stage{position:relative;}
+  .ring-wrap{position:absolute;left:50%;top:206px;transform:translate(-50%,-50%);
+    width:452px;height:452px;}
+  .hero{position:absolute;left:50%;top:200px;transform:translate(-50%,-50%);
+    width:322px;filter:drop-shadow(0 24px 28px rgba(120,92,62,.24))
+                     drop-shadow(0 9px 11px rgba(120,92,62,.14));}
+  .shadow{position:absolute;left:50%;top:388px;transform:translate(-50%,0);
+    width:262px;height:38px;border-radius:50%;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(90,70,48,.26), rgba(90,70,48,0) 72%);
+    filter:blur(3px);}
+  .heart-glow{position:absolute;left:158px;top:176px;width:74px;height:74px;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(214,120,96,.5), rgba(214,120,96,0) 70%);
+    filter:blur(2px);pointer-events:none;}
+  .heart-ico{position:absolute;left:176px;top:196px;width:36px;height:36px;
+    filter:drop-shadow(0 0 6px rgba(214,120,96,.6));pointer-events:none;}
+  .stage-cap{position:absolute;left:0;right:0;top:452px;text-align:center;}
+  .stage-cap .t{font-family:"Songti SC",serif;font-size:22px;letter-spacing:2px;
+    color:var(--ink);font-weight:700;}
+  .stage-cap .t b{color:var(--gold-dk);}
+  .stage-cap .s{margin-top:9px;font-size:12.5px;letter-spacing:2px;color:var(--sub);}
+  .scale-tags{position:absolute;left:0;right:0;top:414px;
+    display:flex;justify-content:center;gap:26px;font:600 11px/1 "SF Mono","Menlo",monospace;
+    letter-spacing:1.5px;color:var(--sub);}
+  .scale-tags i{font-style:normal;display:inline-flex;align-items:center;gap:6px;}
+  .scale-tags .d{width:8px;height:8px;border-radius:50%;}
+
+  /* ---------- right column ---------- */
+  .content{position:relative;padding-top:2px;}
+  .h-brackets{font-family:"Songti SC",serif;}
+  .headline{position:relative;display:flex;align-items:flex-start;}
+  .headline .zh{font-family:"Songti SC","STSong",serif;font-weight:900;
+    font-size:94px;line-height:.94;letter-spacing:6px;
+    background:linear-gradient(160deg,#5A4632 0%,#8E6B44 38%,#C09A63 72%,#8E6B44 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 1px 0 rgba(255,255,255,.4);}
+  .headline .br{font-family:"Songti SC",serif;font-weight:400;font-size:78px;
+    line-height:1;color:var(--gold-lt);opacity:.75;}
+  .subhead{margin-top:12px;display:flex;align-items:center;gap:16px;}
+  .subhead .bar{width:44px;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold-lt));}
+  .subhead .t{font-size:23px;letter-spacing:5px;color:var(--ink);font-weight:500;}
+
+  /* science strip */
+  .sci{margin-top:20px;position:relative;padding:15px 22px 12px;
+    background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.30));
+    border:1px solid var(--line);border-radius:16px;
+    box-shadow:0 10px 24px rgba(120,92,62,.06);display:flex;gap:22px;align-items:center;}
+  .sci .lab{flex:0 0 auto;width:172px;}
+  .sci .lab .k{font:700 11px/1 "SF Mono","Menlo",monospace;letter-spacing:2px;color:var(--gold-dk);}
+  .sci .lab .h{font-family:"Songti SC",serif;font-weight:700;font-size:23px;
+    letter-spacing:0.5px;color:var(--ink);margin-top:8px;white-space:nowrap;}
+  .sci .lab .p{font-size:11.5px;line-height:1.6;color:var(--sub);margin-top:7px;}
+  .sci .chart{flex:1;height:104px;}
+
+  /* feature grid */
+  .grid{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;gap:14px;}
+  .fcard{position:relative;padding:15px 18px;border-radius:15px;
+    background:var(--card);border:1px solid var(--line);
+    box-shadow:0 12px 26px rgba(120,92,62,.07);
+    display:flex;gap:15px;align-items:flex-start;backdrop-filter:blur(2px);}
+  .fcard .chip{flex:0 0 auto;width:46px;height:46px;border-radius:13px;
+    display:flex;align-items:center;justify-content:center;}
+  .fcard .tx .tt{display:flex;align-items:baseline;gap:9px;}
+  .fcard .tx .tt b{font-size:19px;font-weight:600;letter-spacing:1px;color:var(--ink);}
+  .fcard .tx .tt span{font-size:12px;letter-spacing:1px;color:var(--gold-dk);font-weight:600;}
+  .fcard .tx .dd{margin-top:7px;font-size:12.5px;line-height:1.55;color:var(--ink2);}
+  .fcard .no{position:absolute;right:16px;top:13px;
+    font:700 12px/1 "SF Mono","Menlo",monospace;color:var(--line);letter-spacing:1px;}
+
+  /* ---------- bottom band ---------- */
+  .foot{position:absolute;left:56px;right:56px;bottom:30px;height:74px;
+    border-top:1px solid var(--line);padding-top:18px;
+    display:flex;align-items:center;justify-content:space-between;}
+  .foot .left{display:flex;align-items:center;gap:20px;}
+  .foot .mk{width:46px;height:42px;flex:0 0 auto;}
+  .foot .poem{font-family:"STKaiti","Kaiti SC",serif;font-size:20px;
+    letter-spacing:1.5px;color:var(--ink);line-height:1.5;}
+  .foot .poem b{color:var(--gold-dk);font-weight:400;}
+  .foot .right{text-align:right;}
+  .foot .right .slogan{font-family:"Songti SC",serif;font-weight:700;font-size:27px;
+    letter-spacing:2px;
+    background:linear-gradient(120deg,#8E6B44,#C09A63);
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .foot .right .series{margin-top:7px;font:600 11.5px/1 "SF Mono","Menlo",monospace;
+    letter-spacing:2.5px;color:var(--sub);}
+</style>
+</head>
+<body>
+<div class="poster" id="poster">
+
+  <div class="glow-l"></div>
+  <div class="glow-r"></div>
+
+  <!-- ===== top bar ===== -->
+  <div class="top">
+    <div class="brand">
+      <svg class="mk" width="30" height="27" viewBox="0 0 72 64">
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#CBA876"/><stop offset="1" stop-color="#8E6B44"/>
+        </linearGradient></defs>
+        <g fill="none" stroke="url(#g1)" stroke-width="5.2" stroke-linecap="round">
+          <path d="M36 51 C 20 42, 13 30, 18 21 C 22 13, 32 13, 36 22"/>
+          <path d="M36 51 C 52 42, 59 30, 54 21 C 50 13, 40 13, 36 22"/>
+        </g>
+        <circle cx="36" cy="25" r="2.3" fill="#CBA876"/>
+      </svg>
+      <div class="name">知愈 · Ring <b>真系列</b></div>
+    </div>
+    <div class="kick">
+      <span class="tag">软 硬 一 体</span>
+      <span class="dot"></span>
+      <span>BUILDATHON&nbsp;2026 · NEXT&nbsp;WORLD</span>
+    </div>
+  </div>
+  <div class="rule"></div>
+
+  <!-- ===== middle ===== -->
+  <div class="mid">
+
+    <!-- left stage -->
+    <div class="stage">
+      <svg class="ring-wrap" viewBox="0 0 500 500">
+        <defs>
+          <linearGradient id="pg" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#9FBBA9"/>
+            <stop offset="0.5" stop-color="#E3CB93"/>
+            <stop offset="1" stop-color="#D69A84"/>
+          </linearGradient>
+          <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="5"/>
+          </filter>
+        </defs>
+        <!-- faint embrace ripples -->
+        <g fill="none" stroke="#B79C7E" opacity="0.14">
+          <circle cx="250" cy="250" r="150" stroke-width="1"/>
+          <circle cx="250" cy="250" r="192" stroke-width="1"/>
+          <circle cx="250" cy="250" r="236" stroke-width="1" stroke-dasharray="2 7"/>
+        </g>
+        <!-- glow under gauge -->
+        <circle cx="250" cy="250" r="210" fill="none" stroke="url(#pg)"
+                stroke-width="14" opacity="0.16" filter="url(#soft)"
+                stroke-dasharray="990 1320" transform="rotate(135 250 250)"/>
+        <!-- three-color pressure gauge (270° sweep) -->
+        <circle cx="250" cy="250" r="210" fill="none" stroke="url(#pg)"
+                stroke-width="6" stroke-linecap="round"
+                stroke-dasharray="990 1320" transform="rotate(135 250 250)"/>
+        <!-- tick marks along the gauge -->
+        <g stroke="#7A6B54" opacity="0.4">
+          <!-- generated ticks -->
+        </g>
+        <!-- gentle inner hairline -->
+        <circle cx="250" cy="250" r="176" fill="none" stroke="#C9B291" stroke-width="1" opacity="0.5"/>
+      </svg>
+
+      <div class="shadow"></div>
+      <img class="hero" src="hero.png" alt="环抱你">
+      <div class="heart-glow"></div>
+      <svg class="heart-ico" viewBox="0 0 32 28" fill="none">
+        <path d="M16 25C16 25 3 17.5 3 9.2 3 5.2 6 3 9.2 3c2.3 0 3.9 1.2 4.8 2.6h4C18.9 4.2 20.5 3 22.8 3 26 3 29 5.2 29 9.2 29 17.5 16 25 16 25Z"
+              fill="rgba(214,120,96,0.28)" stroke="#C85A44" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M4 13.5h6l2-4 3 8 2.5-6 1.6 3H28" stroke="#C85A44" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+
+      <div class="scale-tags">
+        <i><span class="d" style="background:var(--calm)"></span>舒展</i>
+        <i><span class="d" style="background:var(--mid)"></span>波动</i>
+        <i><span class="d" style="background:var(--high)"></span>紧绷</i>
+      </div>
+      <div class="stage-cap">
+        <div class="t">先环抱自己，<b>再环抱你</b></div>
+        <div class="s">白色身体 · 鎏光香槟手臂 · 未来集成于指间</div>
+      </div>
+    </div>
+
+    <!-- right content -->
+    <div class="content">
+      <div class="headline">
+        <span class="br">「</span>
+        <span class="zh">环抱你</span>
+        <span class="br">」</span>
+      </div>
+      <div class="subhead">
+        <span class="bar"></span>
+        <span class="t">会环抱你的情绪伙伴</span>
+      </div>
+
+      <!-- science strip -->
+      <div class="sci">
+        <div class="lab">
+          <div class="k">PRE-CONSCIOUS</div>
+          <div class="h">身体比你先知道</div>
+          <div class="p">HRV 在你意识到之前先塌陷<br>戒指抓住那 10–20 秒预警窗</div>
+        </div>
+        <svg class="chart" viewBox="0 0 560 128" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#D69A84" stop-opacity="0.28"/>
+              <stop offset="1" stop-color="#D69A84" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#9FBBA9"/>
+              <stop offset="0.55" stop-color="#E3CB93"/>
+              <stop offset="1" stop-color="#D69A84"/>
+            </linearGradient>
+          </defs>
+          <!-- baseline grid -->
+          <line x1="0" y1="44" x2="560" y2="44" stroke="#CBB79B" stroke-width="1" stroke-dasharray="2 6" opacity="0.6"/>
+          <!-- HRV curve: steady, then collapses -->
+          <path d="M0,46 C40,40 70,52 100,44 C130,36 160,50 195,46
+                   C230,42 250,64 275,88 C300,110 330,116 360,112
+                   C400,106 440,104 480,102 C510,101 540,102 560,101"
+                fill="none" stroke="url(#stroke)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M0,46 C40,40 70,52 100,44 C130,36 160,50 195,46
+                   C230,42 250,64 275,88 C300,110 330,116 360,112
+                   C400,106 440,104 480,102 C510,101 540,102 560,101
+                   L560,128 L0,128 Z" fill="url(#area)"/>
+          <!-- marker 1: body knows -->
+          <line x1="248" y1="10" x2="248" y2="118" stroke="#B08A5A" stroke-width="1.4" stroke-dasharray="4 4"/>
+          <circle cx="248" cy="60" r="4.5" fill="#B08A5A"/>
+          <!-- marker 2: you notice -->
+          <line x1="392" y1="10" x2="392" y2="118" stroke="#9A9186" stroke-width="1.4" stroke-dasharray="4 4"/>
+          <circle cx="392" cy="109" r="4.5" fill="#7C7368"/>
+          <!-- gap brace -->
+          <line x1="248" y1="20" x2="392" y2="20" stroke="#B08A5A" stroke-width="1" opacity="0.7"/>
+          <text x="320" y="15" text-anchor="middle" font-family="SF Mono,Menlo,monospace" font-size="10" fill="#8E6B44" letter-spacing="1">≈10–20s</text>
+          <text x="248" y="128" text-anchor="middle" font-family="PingFang SC" font-size="11" fill="#8E6B44" font-weight="700">身体先知道</text>
+          <text x="392" y="128" text-anchor="middle" font-family="PingFang SC" font-size="11" fill="#7C7368">你才察觉</text>
+        </svg>
+      </div>
+
+      <!-- feature grid -->
+      <div class="grid">
+        <div class="fcard">
+          <span class="no">01</span>
+          <div class="chip" style="background:rgba(159,187,169,.22)">
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="#5E8570" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 16h4l2-5 3 10 3-13 3 9 2-3h4"/>
+            </svg>
+          </div>
+          <div class="tx">
+            <div class="tt"><b>无感采集</b><span>四传感器</span></div>
+            <div class="dd">戴上即感知情绪，记录成本归零<br>心率 · HRV · 皮电 · 体动</div>
+          </div>
+        </div>
+
+        <div class="fcard">
+          <span class="no">02</span>
+          <div class="chip" style="background:rgba(214,154,132,.22)">
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="#BE7B62" stroke-width="1.7" stroke-linecap="round">
+              <circle cx="16" cy="16" r="2.4" fill="#BE7B62" stroke="none"/>
+              <path d="M10.5 10.5a8 8 0 000 11M21.5 10.5a8 8 0 010 11"/>
+              <path d="M6.5 6.5a13 13 0 000 19M25.5 6.5a13 13 0 010 19" opacity="0.55"/>
+            </svg>
+          </div>
+          <div class="tx">
+            <div class="tt"><b>私密震动</b><span>三档干预</span></div>
+            <div class="dd">只有你知道的那一下，轻轻环抱<br>拦截 · 锚定 · 撤退</div>
+          </div>
+        </div>
+
+        <div class="fcard">
+          <span class="no">03</span>
+          <div class="chip" style="background:rgba(227,203,147,.28)">
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="#A9853F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="6" width="22" height="20" rx="3"/>
+              <path d="M9 21c3-6 5-3 7-7s4 2 7-3"/>
+              <circle cx="12" cy="12" r="1.6" fill="#A9853F" stroke="none"/>
+            </svg>
+          </div>
+          <div class="tx">
+            <div class="tt"><b>今日心灵画像</b><span>AI 炼成</span></div>
+            <div class="dd">把一天情绪，炼成想收藏的画<br>楷体诗句 · 情绪色卡</div>
+          </div>
+        </div>
+
+        <div class="fcard">
+          <span class="no">04</span>
+          <div class="chip" style="background:rgba(217,191,167,.30)">
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="#9C7A54" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 24h22"/>
+              <rect x="7" y="17" width="4" height="7" rx="1"/>
+              <rect x="14" y="12" width="4" height="12" rx="1"/>
+              <rect x="21" y="7" width="4" height="17" rx="1"/>
+              <path d="M6 9l2-2 1.6 1.6L12 6" opacity="0.7"/>
+            </svg>
+          </div>
+          <div class="tx">
+            <div class="tt"><b>心迹成长</b><span>由灰转暖</span></div>
+            <div class="dd">画廊由灰转暖，见证自己变好<br>等级 · 徽章 · 连续天数</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== bottom band ===== -->
+  <div class="foot">
+    <div class="left">
+      <svg class="mk" width="46" height="42" viewBox="0 0 72 64">
+        <g fill="none" stroke="url(#g1)" stroke-width="5.2" stroke-linecap="round">
+          <path d="M36 51 C 20 42, 13 30, 18 21 C 22 13, 32 13, 36 22"/>
+          <path d="M36 51 C 52 42, 59 30, 54 21 C 50 13, 40 13, 36 22"/>
+        </g>
+        <circle cx="36" cy="25" r="2.3" fill="#CBA876"/>
+      </svg>
+      <div class="poem">你的身体比你先知道 ——<br>它，是身体递给意识的<b>那张纸条</b>。</div>
+    </div>
+    <div class="right">
+      <div class="slogan">用「环抱你」，怀抱你</div>
+      <div class="series">HR · HRV · GSR · MOTION&nbsp;&nbsp;/&nbsp;&nbsp;PRIVATE&nbsp;HAPTIC</div>
+    </div>
+  </div>
+
+  <svg class="grain"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)" opacity="0.05"/></svg>
+  <div class="vign"></div>
+</div>
+</body>
+</html>
