@@ -14,6 +14,14 @@
     trend: 'hbn.trend',
   };
 
+  // 写死默认 API（零配置即可跑通）——与 feature/h5-publish 上线版保持一致。
+  // useMock=true 只影响"戒指"数据（现场无真戒指→模拟心率/HRV），不影响 AI 通道。
+  const DEFAULTS = {
+    apiBaseUrl: 'https://maas.devops.rednote.life/hackson',
+    apiKey: 'MAAS373ad9ff7c544476a499e77c9479b07b',
+    useMock: true,
+  };
+
   const _read = (k, def) => {
     try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; }
     catch (e) { console.warn('[store] read fail', k, e); return def; }
@@ -80,10 +88,18 @@
     setProfile(p) { return _write(K.profile, p); },
 
     // ---- 运行配置 ----
+    // 对老缓存做兜底：之前存过的空 apiBaseUrl/apiKey（main 旧默认就是空）用写死默认值补上，
+    // 否则清过缓存/存过空值的用户会一直"AI 未配置"，chat 与生图全失败。
     getSettings() {
-      return _read(K.settings, { apiBaseUrl: '', apiKey: '', useMock: true });
+      const saved = _read(K.settings, {});
+      return {
+        apiBaseUrl: saved.apiBaseUrl || DEFAULTS.apiBaseUrl,
+        apiKey: saved.apiKey || DEFAULTS.apiKey,
+        useMock: (saved.useMock === undefined ? DEFAULTS.useMock : saved.useMock),
+      };
     },
     setSettings(s) { return _write(K.settings, Object.assign(Store.getSettings(), s)); },
+    resetSettings() { _write(K.settings, {}); return Store.getSettings(); },
 
     // ---- 压力指数时间序列（24h 折线图数据源；realtime 写，growth 可复用）----
     // 每条 { ts, z, level }：z 为 z-score 压力指数（可正可负），level 为分档
