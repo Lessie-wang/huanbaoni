@@ -23,6 +23,20 @@
 (function (global) {
   'use strict';
 
+  const LS_KEY = 'hbn.tts.enabled';
+  const LS_RATE = 'hbn.tts.rate';
+
+  // playbackRate 提速会整体升调（服务端原生 speed 在流式下不支持，只能客户端提速）：
+  // 1.10 升调轻；1.25 明显更快、升调仍在可接受范围；1.3+ 开始发尖发"电子"。
+  // 默认取 1.25（用户要求更快）。可用 TTS.setRate() 实时微调，localStorage 记忆。
+  // 注意：这些必须定义在 CFG 之前——CFG.rate 会立即调用 _loadRate()，
+  // 而 const 有暂时性死区，提前访问 DEFAULT_RATE 会抛 ReferenceError。
+  const DEFAULT_RATE = 1.25;
+  function _loadRate() {
+    try { const v = parseFloat(localStorage.getItem(LS_RATE)); return (v > 0.5 && v < 3) ? v : DEFAULT_RATE; }
+    catch (_) { return DEFAULT_RATE; }
+  }
+
   const CFG = {
     url: 'wss://joiagent.devops.beta.xiaohongshu.com/tts/qwen3cus/v1/audio/speech/stream',
     model: 'Qwen3-TTS-12Hz-1.7B-CustomVoice',
@@ -32,18 +46,6 @@
     connectTimeoutMs: 6000,
     firstAudioTimeoutMs: 8000,   // 首个音频帧最久等多久，超了就降级
   };
-
-  const LS_KEY = 'hbn.tts.enabled';
-  const LS_RATE = 'hbn.tts.rate';
-
-  // playbackRate 提速会整体升调（服务端原生 speed 在流式下不支持，只能客户端提速）：
-  // 1.10 升调轻；1.25 明显更快、升调仍在可接受范围；1.3+ 开始发尖发"电子"。
-  // 默认取 1.25（用户要求更快）。可用 TTS.setRate() 实时微调，localStorage 记忆。
-  const DEFAULT_RATE = 1.25;
-  function _loadRate() {
-    try { const v = parseFloat(localStorage.getItem(LS_RATE)); return (v > 0.5 && v < 3) ? v : DEFAULT_RATE; }
-    catch (_) { return DEFAULT_RATE; }
-  }
 
   const state = {
     enabled: _loadEnabled(),
