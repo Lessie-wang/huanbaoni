@@ -1,0 +1,38 @@
+name: Deploy webapp to GitHub Pages
+
+# 把 webapp/ 子目录发布为站点根 → https://<user>.github.io/huanbaoni/
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'webapp/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:   # 允许手动触发
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只保留一次部署，新的推送取消进行中的旧部署
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true   # 尝试自动开启 Pages（权限够则免去手动 Settings→Pages）
+      - name: Upload webapp as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: webapp        # 仅发布 webapp/，index.html 即站点根
+      - id: deployment
+        uses: actions/deploy-pages@v4
