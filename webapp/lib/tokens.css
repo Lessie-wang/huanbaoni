@@ -1,10 +1,11 @@
 /* tokens.css — 全站设计变量（见 docs/接口契约.md §5）。所有页面只用这些变量，不要写死颜色。 */
 :root{
   /* 品牌（搬自知愈） */
-  --bg:#FAF9F7;
+  --bg:#FAF8F5;
   --surface:#FFFFFF;
   --accent:#D4B8A5;
   --accent-deep:#B89A83;
+  --accent-soft:#E8D6C7;   /* 柔和暖色，用于光晕/浮层底 */
   --ink:#3A352F;
   --sub:#8C8780;
   --line:#ECE8E3;
@@ -17,19 +18,54 @@
   /* 结构 */
   --radius:20px;
   --radius-sm:12px;
+  --radius-lg:28px;
   --gap:16px;
-  --shadow:0 8px 24px rgba(0,0,0,.06);
-  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  --shadow:0 8px 24px rgba(58,53,47,.06);
+  --shadow-soft:0 4px 16px rgba(58,53,47,.05);
+  --shadow-lift:0 10px 30px rgba(184,154,131,.22);   /* 环抱主按钮柔光 */
+
+  /* 字体：标题宋体（文雅），正文黑体（清晰） */
+  --font-serif:"Songti SC","STSong","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --font-sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  --font:var(--font-sans);   /* 兼容旧引用 */
+
+  /* 缓动 */
+  --ease-calm:cubic-bezier(.4,0,.2,1);
 }
 
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
-  background:var(--bg);
+  /* 极柔暖白光晕背景，让页面能"呼吸" */
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(232,214,199,.45), transparent 60%),
+    radial-gradient(90% 50% at 100% 100%, rgba(168,192,176,.10), transparent 55%),
+    var(--bg);
+  background-attachment:fixed;
   color:var(--ink);
-  font-family:var(--font);
+  font-family:var(--font-sans);
   -webkit-font-smoothing:antialiased;
   line-height:1.6;
+}
+
+/* 标题统一走宋体调性 */
+h1,h2,h3,.serif{
+  font-family:var(--font-serif);
+  font-weight:600;
+  letter-spacing:.02em;
+}
+
+/* 缓慢呼吸动效（4-7-8 节律的视觉化，环抱主页核心圆用） */
+@keyframes breathe{
+  0%,100%{transform:scale(1);}
+  50%{transform:scale(1.06);}
+}
+@keyframes haloPulse{
+  0%,100%{opacity:.5;transform:scale(1);}
+  50%{opacity:.85;transform:scale(1.12);}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;}
 }
 button{
   font-family:inherit;

@@ -1,33 +1,18 @@
-<svg width="100" height="64" viewBox="0 0 100 64" xmlns="http://www.w3.org/2000/svg">
+<svg width="72" height="64" viewBox="0 0 72 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="环抱你">
   <defs>
-    <!-- 银色金属光泽渐变 -->
-    <linearGradient id="silver" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%"  stop-color="#F5F6F8"/>
-      <stop offset="25%" stop-color="#C9CDD4"/>
-      <stop offset="50%" stop-color="#EDEFF2"/>
-      <stop offset="72%" stop-color="#A9AEB8"/>
-      <stop offset="100%" stop-color="#D8DBE0"/>
+    <linearGradient id="hbWarm" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"  stop-color="#E6C9B4"/>
+      <stop offset="55%" stop-color="#D4B8A5"/>
+      <stop offset="100%" stop-color="#B89A83"/>
     </linearGradient>
-    <linearGradient id="silver2" x1="100%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%"  stop-color="#EDEFF2"/>
-      <stop offset="30%" stop-color="#B4B9C2"/>
-      <stop offset="55%" stop-color="#F5F6F8"/>
-      <stop offset="80%" stop-color="#9CA1AB"/>
-      <stop offset="100%" stop-color="#CDD1D8"/>
-    </linearGradient>
-    <!-- 柔和投影，让环有悬浮的立体感 -->
-    <filter id="ringShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="1.2" stdDeviation="1.4" flood-color="#000" flood-opacity="0.18"/>
-    </filter>
   </defs>
-
-  <g filter="url(#ringShadow)" fill="none" stroke-linecap="round">
-    <!-- 左环（后） -->
-    <ellipse cx="40" cy="32" rx="20" ry="20" stroke="url(#silver)" stroke-width="5.5"/>
-    <!-- 右环（前，与左环相交，营造"环抱/相扣"感） -->
-    <ellipse cx="60" cy="32" rx="20" ry="20" stroke="url(#silver2)" stroke-width="5.5"/>
-    <!-- 高光短弧，增强金属反光 -->
-    <path d="M 28 20 A 20 20 0 0 1 40 13" stroke="#FFFFFF" stroke-width="1.6" opacity="0.85"/>
-    <path d="M 48 20 A 20 20 0 0 1 60 13" stroke="#FFFFFF" stroke-width="1.6" opacity="0.85"/>
+  <!-- 两片柔弧相向环抱：合成一个心 / 留空的圆（呼应戒指），端点圆润 -->
+  <g fill="none" stroke="url(#hbWarm)" stroke-width="5.2" stroke-linecap="round">
+    <!-- 左臂 -->
+    <path d="M36 51 C 20 42, 13 30, 18 21 C 22 13, 32 13, 36 22"/>
+    <!-- 右臂（镜像相拥成心尖） -->
+    <path d="M36 51 C 52 42, 59 30, 54 21 C 50 13, 40 13, 36 22"/>
   </g>
+  <!-- 心口一点柔光：被接住的那一下 -->
+  <circle cx="36" cy="25" r="2.3" fill="#E6C9B4" opacity="0.92"/>
 </svg>
