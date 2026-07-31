@@ -16,3 +16,7 @@ dist/
 
 # Arduino build
 firmware/build/
+
+# Python generated cache
+__pycache__/
+*.pyc
