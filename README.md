@@ -39,16 +39,16 @@
 
 ## H5 App（`webapp/`）
 
-纯 HTML + CSS + vanilla JS，无框架、无构建步骤。5 个 Tab（环抱居中凸起），小知以悬浮窗常驻：
+纯 HTML + CSS + vanilla JS，无框架、无构建步骤。底部 **5 个 Tab**（环抱居中凸起）+ 悬浮 AI 管家小知：
 
-| 页面 | 文件 | 作用 |
-|---|---|---|
-| 环抱（主页） | `pages/realtime.js` | 连戒指 → 实时 HR/HRV → 三色压力环；压力升高自动分档震动 |
-| 心灵画像 | `pages/portrait.js` | 汇总当日情绪 → AI 生成一幅画 + 解读，诚实呈现而非美化负面情绪 |
-| 心迹 | `pages/growth.js` | 画像画廊（色调演变）+ 情绪/压力趋势 + 等级/徽章/连续天数 |
-| 探索 | `pages/tests.js` | HSPS-12 / PSS-10 等学术量表自测 + AI 解读 |
-| 修习 | `pages/training.js` | 表达训练 + 感官写作 |
-| 小知（AI 管家） | `pages/chat.js` | 语音闭环对话；压力事件后主动发起复盘；**敲两下戒指**即可全局唤起并开录 |
+| 页面 | 类型 | 文件 | 作用 |
+|---|---|---|---|
+| 环抱（主页） | Tab | `pages/realtime.js` | 连戒指 → 实时 HR/HRV → 三色压力环；压力升高自动分档震动 |
+| 心灵画像 | Tab | `pages/portrait.js` | 汇总当日情绪 → AI 生成一幅画 + 解读，诚实呈现而非美化负面情绪 |
+| 心迹 | Tab | `pages/growth.js` | 画像画廊（色调演变）+ 情绪/压力趋势 + 等级/徽章/连续天数 |
+| 探索 | Tab | `pages/tests.js` | HSPS-12 / PSS-10 等学术量表自测 + AI 解读 |
+| 修习 | Tab | `pages/training.js` | 表达训练 + 感官写作 |
+| 小知（AI 管家） | **悬浮窗** | `pages/chat.js` | 语音闭环对话；压力事件后主动发起复盘；**敲两下戒指**即可全局唤起并开录 |
 
 共享层 `webapp/lib/`：`store.js`（localStorage）、`ble.js`（Web Bluetooth）、`mock.js`（假戒指数据）、`ai.js`（AI 调用）、`tts.js`（语音）、`tokens.css`（设计变量）等。
 
