@@ -60,16 +60,79 @@ ${lines || '- 今天身体比较平稳，没有明显绷紧的时刻。'}
 请用开场的第一句话，作为"带证据的证人"轻轻敲门。`;
   }
 
-  // ---- 心灵画像 prompt（莫兰迪抽象风，搬自"新增情绪AI图片提示词.md"的风格） ----
-  function portraitPrompt({ moodSummary, palette, emotions }) {
-    const colors = (palette && palette.length) ? palette.join(', ') : 'soft warm neutral Morandi tones';
-    const emo = (emotions && emotions.length)
-      ? `Emotional undertones to weave in: ${emotions.join(', ')}. `
-      : '';
-    return `A minimalist abstract emotional portrait representing a person's inner state today: "${moodSummary}". ` +
-      emo +
-      `Morandi color palette using exactly these colors (${colors}), gentle flowing curves and soft geometric shapes, dreamy atmosphere, ` +
-      `subtle gradients and soft light. Calm, poetic, healing feeling. No human faces, no text. Oil-painting texture. 1024x1024.`;
+  // 把一个 hex 颜色朝"暗、冷、去饱和"方向拉，负面情绪用（避免莫兰迪粉彩本身就"太美"）
+  // amount 0~1：越大越暗越灰。返回新的 hex。
+  function _darken(hex, amount) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return hex;
+    let r = parseInt(m[1].slice(0, 2), 16),
+        g = parseInt(m[1].slice(2, 4), 16),
+        b = parseInt(m[1].slice(4, 6), 16);
+    const gray = 0.3 * r + 0.59 * g + 0.11 * b;
+    // 先向灰度靠拢（去饱和），再整体压暗
+    const desat = amount * 0.55;
+    r = r + (gray - r) * desat; g = g + (gray - g) * desat; b = b + (gray - b) * desat;
+    const k = 1 - amount * 0.5;
+    r *= k; g *= k; b *= k;
+    const h = n => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+    return '#' + h(r) + h(g) + h(b);
+  }
+
+  // ---- 心灵画像 prompt（诚实的情绪可视化：正向画面舒展美好，负向画面沉郁真实、不美化） ----
+  // 入参：
+  //   palette   [hex...]        取自情绪主色，用作调色板
+  //   emotionObjs [{name,en,visual,valence}...]  用户补录的情绪对象（含专属视觉词库）
+  //   arousal   'high'|'mid'|'low'  戒指波动强度 → 画面动势
+  //   moodSummary  文字概述（仅兜底/无补录情绪时用）
+  function portraitPrompt({ palette, emotionObjs, arousal, moodSummary }) {
+    const emos = (emotionObjs || []).filter(Boolean);
+    const primary = emos[0];
+    const rest = emos.slice(1);
+
+    // 场景：主情绪的专属视觉词库主导画面；其余情绪作暗调交织
+    let scene, valence;
+    if (primary) {
+      scene = primary.visual;
+      valence = primary.valence || 'neg';
+      if (rest.length) {
+        scene += `. Interwoven undertones of ${rest.map(e => `${e.en} (${e.visual})`).join('; ')}`;
+      }
+    } else {
+      // 没有补录具体情绪时，退回用文字概述描述内在状态
+      scene = `an inner state that feels like: "${moodSummary || 'quiet and hard to name'}"`;
+      valence = 'calm';
+    }
+    const negative = (valence === 'neg');
+
+    // 调色板：负面情绪把粉彩压暗去饱和（否则色彩本身就把画面拉向"美”）
+    let cols = (palette && palette.length) ? palette : ['#9AA0A8'];
+    if (negative) cols = cols.map(c => _darken(c, 0.5));
+    const colors = cols.join(', ');
+
+    // 动势：戒指波动强度
+    const dynamics = arousal === 'high'
+      ? 'The overall energy is turbulent and agitated, forms in restless clashing motion.'
+      : arousal === 'mid'
+        ? 'The overall energy is unsettled and uneven.'
+        : 'The overall energy is heavy and static, weighed down and still.';
+
+    if (!negative) {
+      // 正向 / 平静：允许舒展、温暖、美好
+      return `An abstract emotional portrait of a person's inner state today. ` +
+        `Composition and scene: ${scene}. ${arousal === 'high' ? 'Lively and dynamic energy.' : 'Gentle open energy.'} ` +
+        `Let the mood breathe openly — warm, resolved, at ease. ` +
+        `Rendered as a soft abstract oil painting: flowing organic forms and soft shapes, visible brush texture, no human faces, no text. ` +
+        `Warm luminous color palette drawn from these tones (${colors}). Poetic and uplifting. 1024x1024.`;
+    }
+
+    // 负向：诚实呈现真实情绪，明确禁止美化 —— 这是重点分支
+    return `A raw, honest abstract oil painting that visualizes a person's genuinely difficult emotional state today — this is NOT meant to be pretty or comforting. ` +
+      `Composition and scene: ${scene}. ${dynamics} ` +
+      `This is an unflinching mirror of how heavy today actually felt. The image MUST look and feel emotionally uncomfortable — somber, oppressive, tense or bleak as the emotion demands. ` +
+      `Muted, desaturated, darkened palette (${colors}); low-key moody lighting with deep shadows and murky areas, heavy overcast atmosphere, dominant negative space or crushing weight as fitting. ` +
+      `Abstract forms only, visible oil brush texture, no human faces, no text. ` +
+      `ABSOLUTELY AVOID: bright cheerful colors, warm sunlight, glowing radiant orbs, sunbeams, rainbows, plants, leaves, sprouts, flowers, blossoms, hearts, anything hopeful decorative cute or uplifting, anything that resolves the tension or makes it look serene and beautiful. ` +
+      `1024x1024.`;
   }
 
   const AI = {
