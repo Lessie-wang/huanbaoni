@@ -171,11 +171,11 @@ def card(kick, title, desc, shot, kind, outname, tags=None):
 CALM, MID, HIGH = (159, 187, 169), (227, 203, 147), (214, 154, 132)
 
 card("DAILY SOUL PORTRAIT", "今日心灵画像",
-     "戒指感知强度定底色，你亲手点选情绪补上色相——\nAI 把当天的心情炼成一幅画，配一句诗。",
+     "伙伴感知强度定底色，你亲手点选情绪补上色相——\nAI 把当天的心情炼成一幅画，配一句诗。",
      f"{POS}/app_portrait.png", "phone", "01_今日心灵画像.png")
 
 card("REALTIME EMBRACE", "实时环抱",
-     "三色压力环 + 实时 HR / HRV。压力悄悄升高的那一刻，\n戒指先你一步，给你一次只有你知道的私密震动。",
+     "三色压力环 + 实时 HR / HRV。压力悄悄升高的那一刻，\n伙伴先你一步，给你一次只有你知道的私密震动。",
      f"{POS}/app_realtime.png", "phone", "02_实时环抱.png",
      tags=[("舒展", CALM), ("波动", MID), ("紧绷", HIGH)])
 
@@ -184,7 +184,7 @@ card("THE REAL BUILD", "真机实操",
      f"{POS}/hw_real_shot.png", "photo", "03_真机实操.png")
 
 card("AI COMPANION", "小知复盘",
-     "敲两下戒指唤醒小知。它带着刚才的身体证据,\n陪你把那阵说不清的情绪,慢慢说清楚。",
+     "敲两下伙伴唤醒小知。它带着刚才的身体证据,\n陪你把那阵说不清的情绪,慢慢说清楚。",
      f"{POS}/app_chat.png", "phone", "04_小知复盘.png")
 
 card("GROWTH GALLERY", "心迹画廊",
@@ -202,7 +202,7 @@ def collage():
     grad_title(cv, (150, 166), "把冷数据,炼成一个心灵世界", song(70))
     items = [("app_realtime.png", "实时环抱", "三色压力环"),
              ("app_portrait.png", "今日心灵画像", "AI 情绪画作"),
-             ("app_chat.png", "小知复盘", "敲两下戒指"),
+             ("app_chat.png", "小知复盘", "敲两下伙伴"),
              ("app_growth.png", "心迹画廊", "由灰转暖")]
     ph_h = 648
     gap = 64

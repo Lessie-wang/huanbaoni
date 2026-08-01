@@ -115,7 +115,7 @@
       const s = ((e.detail && e.detail.gesture) || '').toUpperCase();
       if (s.indexOf('TAP') < 0) return;
       // 只在「已经在小知页」时由这里 toggle 当前录音器；
-      // 不在小知页时的「敲戒指→跳转唤起」由 index.html 的全局路由负责，避免双触发。
+      // 不在小知页时的「敲伙伴→跳转唤起」由 index.html 的全局路由负责，避免双触发。
       const key = (location.hash.replace('#', '') || 'realtime');
       if (key !== 'chat') return;
       const now = Date.now();
@@ -134,9 +134,9 @@
     }
     const t = new Date(high.ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
     if (high.mood) {
-      return `${t} 那会儿，你的身体悄悄绷紧了一下，你当时留意到的是"${high.mood}"。如果愿意，能和我说说那一刻，发生了什么吗？`;
+      return `我在。${t} 那会儿，伙伴记录到身体一度绷得很紧，你当时留意到的是"${high.mood}"。如果愿意，能和我说说那一刻，正在发生什么吗？`;
     }
-    return `${t} 那会儿，你的身体其实绷紧了一下，你可能都没来得及留意。不必急着回答——如果愿意，能和我说说那时候，你正在忙着什么吗？`;
+    return `我在。${t} 那会儿，伙伴记录到身体一度绷得很紧。不必急着回答——如果愿意，能和我说说那时候，你正在忙着什么吗？`;
   }
 
   function mockReply(userText) {
@@ -297,10 +297,10 @@
         <div class="rec-bar" id="recBar">
           <span class="rec-dot"></span>
           <span id="recText">正在聆听你说…</span>
-          <span class="rec-hint">再敲两下戒指 / 点麦克风 结束</span>
+          <span class="rec-hint">再敲两下伙伴 / 点麦克风 结束</span>
         </div>
         <div class="chat-in">
-          <button class="chat-mic" id="chatMic" title="敲两下戒指或点这里开始说话" aria-label="语音输入">
+          <button class="chat-mic" id="chatMic" title="敲两下伙伴或点这里开始说话" aria-label="语音输入">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="3" width="6" height="11" rx="3"></rect>
               <path d="M5 11a7 7 0 0 0 14 0"></path>
@@ -310,7 +310,7 @@
           <textarea id="chatInput" rows="1" placeholder="和小知说说此刻的心情…"></textarea>
           <button id="chatSend">发送</button>
         </div>
-        <div class="chat-tip">敲两下戒指即可开口对小知说话 · 录音只存在你本机，不上传 · 危机可拨 400-161-9995</div>
+        <div class="chat-tip">敲两下伙伴即可开口对小知说话 · 录音只存在你本机，不上传 · 危机可拨 400-161-9995</div>
       </div>
     `;
 
@@ -593,7 +593,7 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
 
-    // ================= 语音输入：敲两下戒指开始 / 再敲两下结束 =================
+    // ================= 语音输入：敲两下伙伴开始 / 再敲两下结束 =================
     // 原始音频用 MediaRecorder 录（停顿随意，存 IndexedDB）；
     // 文字稿用 Web Speech 连续识别，静音断了就自动重启，把停顿缝过去；
     // 结束条件：双击 toggle 或点麦克风；只有 5 分钟硬上限做保险，不做静音自动停。
@@ -703,7 +703,7 @@
           }
           if (this.recogDead) return;   // 已熔断：只录音，不再重启识别
           // 根因修复：连不到识别后端时会"一启动就 end"，若同步立即 r.start() 会形成
-          // start→error→end→start 的高频风暴，打满主线程 → 整页卡死、戒指手势也被拖垮。
+          // start→error→end→start 的高频风暴，打满主线程 → 整页卡死、伙伴手势也被拖垮。
           // 对策：① 秒退（<1.2s 就结束且这段没出过结果）计一次失败，累计到阈值即熔断；
           //       ② 重启一律用 setTimeout 让出主线程（哪怕正常静音重启，也不再同步递归）。
           const lived = Date.now() - this.recogStartAt;
@@ -792,7 +792,7 @@
 
     micBtn.onclick = () => voice.toggle();
 
-    // 敲两下戒指 → 收到 DBLTAP 手势 → toggle 录音（wireGestureOnce 只挂一次全局监听，指向当前录音器）
+    // 敲两下伙伴 → 收到 DBLTAP 手势 → toggle 录音（wireGestureOnce 只挂一次全局监听，指向当前录音器）
     activeVoiceToggle = () => voice.toggle();
     // 离开小知页时把「本次对话」摘进心迹（history 是本次 render 的对话历史）
     activeSummarize = () => saveChatSummary(history);
@@ -801,7 +801,7 @@
 
     function toastChat(msg) { recText.textContent = msg; recBar.classList.add('on'); setTimeout(() => recBar.classList.remove('on'), 1600); }
 
-    // 敲戒指从别的页面跳进来的 → 用户主动想说话，直接开录。
+    // 敲伙伴从别的页面跳进来的 → 用户主动想说话，直接开录。
     // 标记由 index.html 全局路由写入；这里消费一次即清掉（避免手动进小知页也误触）。
     let fromRing = false;
     try {
@@ -811,7 +811,7 @@
       }
     } catch (_) {}
 
-    // 用户敲戒指主动进来是「我有话要说」，此时小知的证据开场白会打断分享 → 跳过开场，直接开录。
+    // 用户敲伙伴主动进来是「我有话要说」，此时小知的证据开场白会打断分享 → 跳过开场，直接开录。
     // 手动点进来（非敲击）才由小知带证据主动开场。
     if (fromRing) {
       // 稍等一拍，让页面 DOM 先就位，再唤起录音（内含 getUserMedia + 解锁 TTS）

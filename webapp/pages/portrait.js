@@ -10,11 +10,11 @@
   let el;
   let selected = [];   // 用户当天补录的情绪名（多选）
 
-  // 戒指波动(客观) + 用户补录情绪(主观) → 文字概述 + 色板 + 情绪关键词
+  // 伙伴波动(客观) + 用户补录情绪(主观) → 文字概述 + 色板 + 情绪关键词
   function deriveMood() {
     const events = Store.getEventsByDate();
     const g = Store.getGrowth();
-    // 只统计戒指压力事件 → 波动强度
+    // 只统计伙伴压力事件 → 波动强度
     let mid = 0, high = 0;
     events.forEach(e => { if (e.type === 'stress') { if (e.level === 'high') high++; else if (e.level === 'mid') mid++; } });
 
@@ -33,7 +33,7 @@
     let moodSummary = arousalText;
     if (emoNames.length) moodSummary += `。你说这一天的心情里，有「${emoNames.join('、')}」`;
     const hugs = g.ringHugCount || 0;
-    if (hugs) moodSummary += `；戒指今天环抱了你 ${hugs} 次`;
+    if (hugs) moodSummary += `；伙伴今天环抱了你 ${hugs} 次`;
 
     // 色板：有补录情绪时以情绪色为主（更贴合真实心情），否则用波动基色兜底
     const palette = emoColors.length

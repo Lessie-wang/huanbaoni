@@ -497,7 +497,7 @@
         </div>
       </div>`;
 
-    // 戒指呼应：结果页做一次"温柔收束"呼吸（无戒指静默跳过）
+    // 伙伴呼应：结果页做一次"温柔收束"呼吸（无伙伴静默跳过）
     tryRingAnchor();
 
     el.querySelector('#tsRetry').onclick = () => startQuiz(scale.id);

@@ -52,7 +52,7 @@
             <div class="gr-empty-em">✿</div>
             <div class="gr-empty-title">你的心迹还是一张白纸</div>
             <div class="gr-empty-sub muted">
-              戴上戒指去感受，或去「心灵画像」炼一幅画——<br>
+              戴上伙伴去感受，或去「心灵画像」炼一幅画——<br>
               这里会慢慢长出属于你的色彩与轨迹。
             </div>
             <button class="ghost gr-demo-btn" id="grDemo">载入一段演示心迹</button>
@@ -157,7 +157,7 @@
   function companionNote(hugs, tense) {
     if (!hugs && !tense) return '还没有一起经历波动——不急，我在这里等你。';
     if (tense) return `我们一起度过了 ${tense} 个身体绷紧的时刻，每一次，你都没有独自扛。`;
-    return `戒指环抱了你 ${hugs} 次，那是身体替你说的"我在"。`;
+    return `伙伴环抱了你 ${hugs} 次，那是身体替你说的"我在"。`;
   }
 
   // ============================================================

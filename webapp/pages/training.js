@@ -147,7 +147,7 @@
     _toastTimer = setTimeout(() => { t.className = ''; }, 2200);
   }
 
-  // 开场"静心"仪式：戒指已连时轻触一次共振呼吸（吸4·呼6），无戒指静默跳过
+  // 开场"静心"仪式：伙伴已连时轻触一次共振呼吸（吸4·呼6），无伙伴静默跳过
   function gentleAnchor() {
     try {
       const r = global.ring;

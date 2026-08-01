@@ -172,11 +172,11 @@
         ring.simulateStress();                 // mock：抬升心率，算法自然检测到
         toast('已注入压力，观察心率上升…');
       } else {
-        handleHighStress(lastData || { hr: base.hr.m || 80, hrv: 0 }); // 真戒指：直接触发一次
+        handleHighStress(lastData || { hr: base.hr.m || 80, hrv: 0 }); // 真伙伴：直接触发一次
       }
     };
 
-    // 三档触觉手动测试：直接发对应档位指令（连接后可试真戒指的震动手感）
+    // 三档触觉手动测试：直接发对应档位指令（连接后可试真伙伴的震动手感）
     const LABELS = {
       intercept: '· 档一·拦截：轻促短震',
       anchor:    '🌬️ 档二·锚点：跟着呼吸（吸4·呼6）',
@@ -187,7 +187,7 @@
         const mode = b.dataset.mode;
         ring.vibrate(mode);
         pulseRing();
-        toast(LABELS[mode] || '戒指震动');
+        toast(LABELS[mode] || '伙伴震动');
       };
     });
   }
@@ -297,12 +297,12 @@
     highCooldownUntil = Date.now() + 20000; // 20s 冷却
     highStreak = 0;
 
-    ring.vibrate(mode);                       // 戒指私密震动（三档触觉）
+    ring.vibrate(mode);                       // 伙伴私密震动（三档触觉）
     pulseRing();
 
     const note = mode === 'retreat'
-      ? '压力仍未缓解，戒指给你「撤退许可」——你可以停下来了'
-      : '压力升高，戒指用呼吸节律轻轻锚住了你（吸4·呼6）';
+      ? '压力仍未缓解，伙伴给你「撤退许可」——你可以停下来了'
+      : '压力升高，伙伴用呼吸节律轻轻锚住了你（吸4·呼6）';
     Store.addEvent({
       type: 'stress', level: 'high',
       hr: d.hr, hrv: d.hrv, source: 'ring', mode, note,
@@ -312,7 +312,7 @@
     refreshHug();
     Store.addTrendSample({ z: stressIndex(d).z, level: 'high' });
     renderTrend();
-    toast(mode === 'retreat' ? '🫂 戒指：你可以停下来了' : '🌬️ 戒指陪你呼吸（吸4·呼6）');
+    toast(mode === 'retreat' ? '🫂 伙伴：你可以停下来了' : '🌬️ 伙伴陪你呼吸（吸4·呼6）');
   }
 
   // 档一：中压苗头 → intercept(轻促短震)，只提醒不记为"高压环抱"
@@ -326,14 +326,14 @@
     Store.addEvent({
       type: 'stress', level: 'mid',
       hr: d.hr, hrv: d.hrv, source: 'ring', mode: 'intercept',
-      note: '压力刚有苗头，戒指轻促地提醒了你一下',
+      note: '压力刚有苗头，伙伴轻促地提醒了你一下',
     });
     Store.incRingHug();
     refreshTimeline();
     refreshHug();
     Store.addTrendSample({ z: stressIndex(d).z, level: 'mid' });
     renderTrend();
-    toast('· 戒指轻轻碰了碰你');
+    toast('· 伙伴轻轻碰了碰你');
   }
 
   function pulseRing() {
@@ -422,7 +422,7 @@
     if (!box) return;
     const list = Store.getEventsByDate();
     if (!list.length) {
-      box.innerHTML = `<div class="rt-empty muted">今天还没有记录，戴上戒指开始感受吧</div>`;
+      box.innerHTML = `<div class="rt-empty muted">今天还没有记录，戴上伙伴开始感受吧</div>`;
       return;
     }
     const COLLAPSED = 5;

@@ -200,7 +200,7 @@
     <input id="setBase" placeholder="https://.../v1" />
     <label>API Key</label>
     <input id="setKey" placeholder="sk-..." />
-    <label><input type="checkbox" id="setMock" style="width:auto;margin-right:6px" />使用 mock 假数据（无戒指时开发/演示）</label>
+    <label><input type="checkbox" id="setMock" style="width:auto;margin-right:6px" />使用 mock 假数据（无伙伴时开发/演示）</label>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="ghost" style="flex:1" onclick="settingsDlg.close()">取消</button>
       <button style="flex:1" onclick="saveSettings()">保存</button>
@@ -229,7 +229,7 @@
   <script src="pages/training.js"></script>
 
   <script>
-    // 全局戒指实例（默认 mock；硬件通了在设置里关掉 mock 并启用 BleRing）
+    // 全局伙伴实例（默认 mock；硬件通了在设置里关掉 mock 并启用 BleRing）
     const USE_MOCK = (Store.getSettings().useMock !== false);
     window.ring = USE_MOCK ? new MockRing() : (window.BleRing ? new BleRing() : new MockRing());
 
@@ -313,7 +313,7 @@
     window.openChat = openChat;
     window.closeChat = closeChat;
 
-    // ---- 敲戒指 → 任意页面直接唤起小知并开录（全局只挂一次）----
+    // ---- 敲伙伴 → 任意页面直接唤起小知并开录（全局只挂一次）----
     // 已在小知页时：交给 chat.js 自己 toggle（那边同样有去抖），这里不管。
     // 不在小知页时：写入自动开录标记 → 跳转 #chat，chat.js 落地后消费标记自动开录。
     let _navGestureAt = 0;
@@ -329,8 +329,8 @@
       location.hash = 'chat';
     });
 
-    // ---- 无真戒指时的「模拟敲两下」：双击屏幕 / 双指点击 → 派发 ring:gesture(DBLTAP) ----
-    // 现场用手机演示「敲戒指唤起小知」的亮点，不接硬件也能跑；真戒指到位后此路径不影响它。
+    // ---- 无真伙伴时的「模拟敲两下」：双击屏幕 / 双指点击 → 派发 ring:gesture(DBLTAP) ----
+    // 现场用手机演示「敲伙伴唤起小知」的亮点，不接硬件也能跑；真伙伴到位后此路径不影响它。
     // 忽略输入框/按钮/链接上的双击，避免误触打断正常操作。
     (function wireTapSimulation() {
       const IGNORE = /^(BUTTON|A|INPUT|TEXTAREA|SELECT|LABEL)$/;
@@ -346,7 +346,7 @@
       };
       // 桌面/手机通用：原生 dblclick（浏览器已按系统阈值判定「快速两下」）
       document.addEventListener('dblclick', (e) => { if (!fromUI(e.target)) fire(); });
-      // 手机双指点击（two-finger tap）：一次 touchstart 出现两个触点即视为「敲戒指」
+      // 手机双指点击（two-finger tap）：一次 touchstart 出现两个触点即视为「敲伙伴」
       document.addEventListener('touchstart', (e) => {
         if (e.touches && e.touches.length === 2 && !fromUI(e.target)) fire();
       }, { passive: true });
@@ -365,7 +365,7 @@
       Store.setSettings({ apiBaseUrl: setBase.value.trim(), apiKey: setKey.value.trim(), useMock: setMock.checked });
       AI.loadFromStore();
       settingsDlg.close();
-      alert('已保存。刷新页面生效（切换 mock/真戒指需刷新）。');
+      alert('已保存。刷新页面生效（切换 mock/真伙伴需刷新）。');
     }
   </script>
 </body>
