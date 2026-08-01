@@ -91,6 +91,13 @@
         type: 'chat', level: 'low', mood, note,
         source: 'xiaozhi',                               // 标记来自小知对话，便于日后区分
       });
+      // AI 摘要是异步的（await 了几秒），用户很可能已经切到心迹页、而心迹页在写库之前就渲染过了。
+      // 若此刻正停在心迹页，主动重渲染一次，让这条新记录立即可见（否则要等下次进页面才刷新）。
+      const hash = (location.hash.replace('#', '') || 'realtime');
+      if (hash === 'growth' && global.Pages && global.Pages.growth) {
+        const view = document.getElementById('view');
+        if (view) { try { global.Pages.growth.render(view); } catch (_) {} }
+      }
     } catch (_) {}
   }
 
