@@ -7,7 +7,7 @@
 戒指两端是一双抽象的手，共同托住可拆卸的六瓣「情绪核心」。它读你的心率与 HRV，识别压力的到来，在你还没意识到之前先用一次轻震「拦」住它；一天结束时，把你的情绪画成一幅画，让小知陪你复盘。
 
 - **线上体验（GitHub Pages）**：https://lessie-wang.github.io/huanbaoni/
-- **线上体验（Cowork）**：https://cowork.xiaohongshu.com/f/huanbaoni/
+- **线上体验（Netlify）**：https://huanbaoni.netlify.app/
 - 内置 demo 数据，扫码即用，无需连接真实硬件即可跑通全流程。
 
 ---
