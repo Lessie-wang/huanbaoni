@@ -17,6 +17,83 @@
   let _gestureWired = false;
   let _lastGestureAt = 0;
 
+  // ---------- 对话沉淀到心迹（轻量版）----------
+  // 离开小知页时，把这次对话摘成一条「情绪小结」事件存进 Store，心迹页零改动即可显示
+  // （日历着色读 ev.mood，点开某天显示 ev.note，见 pages/growth.js）。
+  // activeSummarize 指向「当前这次对话的落盘函数」；离开页(hashchange)时调用一次即置空，避免重复入库。
+  let activeSummarize = null;
+
+  // 情绪主类词表（须与 lib/emotions.js 的 name 一致，否则 EmotionBy 取不到颜色）
+  const MOOD_SET = ['开心', '平静', '难过', '焦虑', '幸福', '自豪', '孤独', '愤怒',
+                    '兴奋', '感动', '失望', '恐惧', '累', '困惑', '尴尬', '不知道'];
+
+  // 兜底：AI 摘要失败时，从用户原话里粗扫一个情绪词（命中主类或其近义子词即可）
+  function guessMood(text) {
+    const t = text || '';
+    const SUBS = {
+      焦虑: ['担忧', '不安', '紧张', '焦灼', '恐慌', '压力', '烦'],
+      难过: ['失落', '沮丧', '忧伤', '悲', '心碎', '哭', '委屈'],
+      孤独: ['孤单', '寂寞', '一个人', '没人'],
+      愤怒: ['生气', '恼', '愤', '气死', '烦躁'],
+      累:   ['疲', '困', '累', '撑不住', '精疲'],
+      开心: ['开心', '高兴', '愉悦', '喜悦', '欢'],
+      感动: ['温暖', '触动', '感激', '感恩', '被接住'],
+      困惑: ['迷茫', '困惑', '茫然', '不知道该', '纠结', '矛盾'],
+      失望: ['遗憾', '失望', '心寒', '心灰'],
+      恐惧: ['害怕', '畏惧', '恐惧', '惊恐', '怕'],
+      平静: ['平静', '放松', '安宁', '淡然', '还好'],
+    };
+    for (const mood in SUBS) {
+      if (SUBS[mood].some(w => t.indexOf(w) >= 0)) return mood;
+    }
+    return '不知道';
+  }
+
+  // 把一次对话摘成一条心迹事件并落盘。history: [{role,content}...]；只在有真实用户发言时存，只存一次。
+  async function saveChatSummary(history) {
+    const userTurns = (history || []).filter(m => m.role === 'user' && (m.content || '').trim());
+    if (!userTurns.length) return;                       // 纯看开场白没说话 → 不产生心迹
+
+    const lastUser = userTurns[userTurns.length - 1].content.trim();
+    let mood = '', note = '';
+
+    // 首选：让小知读整段对话，选一个情绪 + 写一句第一人称小结
+    // online 判定与 render 保持一致（读 Store settings；ai.js 未导出 cfg）。
+    const _s = Store.getSettings();
+    const online = !!(_s.apiBaseUrl && _s.apiKey);
+    if (online) {
+      try {
+        const convo = (history || [])
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map(m => (m.role === 'user' ? '我' : '小知') + '：' + m.content)
+          .join('\n');
+        const sys = '你是情绪记录助手。读下面用户与「小知」的对话，只关注用户的情绪状态，'
+          + '输出严格 JSON：{"mood":情绪词,"note":一句话小结}。'
+          + 'mood 必须从这些词中选一个最贴切的：' + MOOD_SET.join('、') + '。'
+          + 'note 用第一人称、20 字以内、温柔不评判地概括用户这次聊了什么/什么心情，不加引号。'
+          + '只输出 JSON，不要多余文字。';
+        const raw = await AI.chat([
+          { role: 'system', content: sys },
+          { role: 'user', content: convo },
+        ]);
+        const j = JSON.parse(raw.replace(/^[^{]*/, '').replace(/[^}]*$/, ''));
+        if (j && typeof j.mood === 'string') mood = j.mood.trim();
+        if (j && typeof j.note === 'string') note = j.note.trim().replace(/^["“]|["”]$/g, '');
+      } catch (_) { /* 落到下面的兜底 */ }
+    }
+
+    if (!MOOD_SET.includes(mood)) mood = guessMood(lastUser);
+    if (!note) note = lastUser.slice(0, 20);
+    else note = note.slice(0, 24);
+
+    try {
+      Store.addEvent({
+        type: 'chat', level: 'low', mood, note,
+        source: 'xiaozhi',                               // 标记来自小知对话，便于日后区分
+      });
+    } catch (_) {}
+  }
+
   // 离开小知页时让语音立刻停（切 tab / 返回都会 hashchange）——只挂一次
   let _leaveWired = false;
   function wireLeaveOnce() {
@@ -24,7 +101,11 @@
     _leaveWired = true;
     global.addEventListener('hashchange', () => {
       const key = (location.hash.replace('#', '') || 'realtime');
-      if (key !== 'chat' && global.TTS) { try { global.TTS.stop(); } catch (_) {} }
+      if (key !== 'chat') {
+        if (global.TTS) { try { global.TTS.stop(); } catch (_) {} }
+        // 离开小知页 → 把这次对话摘成一条心迹（只摘一次，摘完置空）
+        if (activeSummarize) { const fn = activeSummarize; activeSummarize = null; try { fn(); } catch (_) {} }
+      }
     });
   }
   function wireGestureOnce() {
@@ -713,6 +794,8 @@
 
     // 敲两下戒指 → 收到 DBLTAP 手势 → toggle 录音（wireGestureOnce 只挂一次全局监听，指向当前录音器）
     activeVoiceToggle = () => voice.toggle();
+    // 离开小知页时把「本次对话」摘进心迹（history 是本次 render 的对话历史）
+    activeSummarize = () => saveChatSummary(history);
     wireGestureOnce();
     wireLeaveOnce();
 
